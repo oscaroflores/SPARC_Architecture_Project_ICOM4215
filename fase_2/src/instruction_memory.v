@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module instruction_memory (
     input [8:0] A,
     output reg [31:0] I

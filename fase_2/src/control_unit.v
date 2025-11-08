@@ -2,28 +2,39 @@
 
 module control_unit(
     input  [31:0] I,
-    output reg [3:0] ALU_OP,
-    output reg [1:0] RAM_Size,
-    output reg       RAM_RW,
-    output reg       RAM_Enable,
-    output reg       L,
-    output reg       RF_LE
+
+    output reg [31:0] control_signals
 );
+    // Initialize control signals
+    reg [3:0]  ALU_OP;
+    reg [3:0]  SOH_OP;
+    reg [1:0]  RAM_Size;
+    reg        RAM_RW;
+    reg        RAM_Enable;
+    reg        L;
+    reg        RF_LE;
+    reg        call;
+    reg        jmpl;
+    reg        B;
 
     // Combinational control logic
     always @(*) begin
         // Default values
         ALU_OP     = 4'b0000;
+        SOH_OP     = 4'b0000;
         RAM_Size   = 2'b00;
         RAM_RW     = 1'b0;
         RAM_Enable = 1'b0;
         L          = 1'b0;
         RF_LE      = 1'b0;
+        call       = 1'b0;
+        jmpl       = 1'b0;
+        B          = 1'b0;
+        control_signals = 32'b0;
 
         case (I[31:30])
             2'b01: begin
                 // Format 1: CALL (placeholder)
-                // You can add behavior here if needed.
             end
 
             2'b00: begin // Format 2
@@ -32,8 +43,7 @@ module control_unit(
                         // Placeholder for branch control
                     end
                     3'b100: begin // SETHI
-                        // Example operation: this would normally load an immediate
-                        // No rd_data signal declared here, so we skip that assignment
+
                     end
                 endcase
             end
@@ -145,6 +155,8 @@ module control_unit(
                 // no-op
             end
         endcase
+
+       control_signals = {15'b0, ALU_OP, SOH_OP, RAM_Size, RAM_RW, RAM_Enable, L, RF_LE, call, jmpl, B}; 
     end
 
 endmodule

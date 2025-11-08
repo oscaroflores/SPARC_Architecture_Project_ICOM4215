@@ -6,10 +6,9 @@ module PPU_ControlPath_tb;
     reg clk;
     reg reset;
     reg S;
-    wire [31:0] PC, nPC, instr_IF, instr_ID;
-    wire [3:0]  EX_ctrl;
-    wire [1:0]  MEM_ctrl;
-    wire        WB_ctrl;
+    reg [31:0] control_signals;
+    wire [31:0]instr_IF, instr_ID, EX_ctrl, MEM_ctrl, WB_ctrl;
+    wire [8:0] PC, nPC;
 
     // Instantiate the DUT (Device Under Test)
     PPU_ControlPath dut (
@@ -44,11 +43,11 @@ module PPU_ControlPath_tb;
         #3 reset = 0;
 
         // S cambia a 1 en t=40 ns
-        #37 S = 1;
+        #40 S = 1;
 
         // Finaliza en t=48 ns
-        #8;
-        $display("=== SIMULACIÓN FINALIZADA ===");
+        #48;
+        $display("=== SIMULACION FINALIZADA ===");
         $finish;
     end
 
@@ -161,11 +160,27 @@ module PPU_ControlPath_tb;
 
             default: $write("Instr=UNKNOWN OP ");
         endcase
-
+        // Mostrar NPC y PC
         $display("| PC=%0d | nPC=%0d", PC, nPC);
+
+        // Mostrar señales de control
+        $display("Control Signals:");
+        $display("ALU_OP=%b", control_signals[16:13]);
+        $display("SOH_OP=%b", control_signals[12:9]);
+        $display("RAM_Size=%b", control_signals[8:7]);
+        $display("RAM_RW=%b", control_signals[6]);
+        $display("RAM_Enable=%b", control_signals[5]);
+        $display("L=%b", control_signals[4]);
+        $display("RF_LE=%b", control_signals[3]);
+        $display("call=%b", control_signals[2]);
+        $display("jmpl=%b", control_signals[1]);
+        $display("B=%b", control_signals[0]);
+
+        // Mostrar señales de control de la etapa EX, MEM y WB
         $display("EX_ctrl=%b", EX_ctrl);
         $display("MEM_ctrl=%b", MEM_ctrl);
         $display("WB_ctrl=%b", WB_ctrl);
+
     end
 
 endmodule

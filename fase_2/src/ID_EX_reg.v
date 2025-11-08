@@ -1,12 +1,17 @@
 // =======================================
 // ID/EX: registro de señales de control de EX
-// - Ajusta [3:0] si tu bus EX_ctrl tiene otro ancho
 // =======================================
-module ID_EX_reg (input clk, input reset, input [3:0] ex_ctrl_in, output reg [3:0] ex_ctrl_out);
+module ID_EX_reg (
+    input clk,
+    input reset,
+    input [31:0] id_ctrl_in,
+    output reg [31:0] ex_ctrl_out
+);
+
     always @(posedge clk) begin
         if (reset)
-            ex_ctrl_out <= 4'b0000; // en reset, NOP (sin control)
+            ex_ctrl_out <= 32'b0; // en reset, NOP
         else
-            ex_ctrl_out <= ex_ctrl_in;
+            ex_ctrl_out <= id_ctrl_in;
     end
 endmodule

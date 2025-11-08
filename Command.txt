@@ -1,0 +1,3 @@
+// Corre y crea los files PPU_ControlPath_tb.vcd y PPU_ControlPath_tb.vvp parra correr el test bench de todo lo que esta en el mismo lugar que el
+iverilog -o PPU_ControlPath_tb.vvp *.v
+vvp PPU_ControlPath_tb.vvp

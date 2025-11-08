@@ -1,3 +1,19 @@
-// Corre y crea los files PPU_ControlPath_tb.vcd y PPU_ControlPath_tb.vvp parra correr el test bench de todo lo que esta en el mismo lugar que el
+Para correr los testbench debes abrir un terminal y moverte al folder que estan los modulos
+para esta fase los coloque en el folder fase_2 en el subfolder src so que tenemos que entrar a /fase_2/src so que seria
+comando "cd fase_2" y enter, comando "cd src" y enter y despues los dos comandos seguidos "iverilog -o PPU_ControlPath_tb.vvp *.v
+vvp PPU_ControlPath_tb.vvp"
+
+cd fase_2
+
+cd src
+
 iverilog -o PPU_ControlPath_tb.vvp *.v
 vvp PPU_ControlPath_tb.vvp
+
+
+
+
+
+
+COMANDO EXTRA: gtkwave PPU_ControlPath_tb.vcd
+Este comando abre la extension gtkwave que se utiliza para ver senales

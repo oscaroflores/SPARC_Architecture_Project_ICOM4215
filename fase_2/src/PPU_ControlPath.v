@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////////////////Control path
-// TOP: PPU_ControlPath
-// - Conecta PC, nPC, Instruction Memory, IF/ID, Control Unit,
-//   MUX de control y pipeline de señales EX/MEM/WB.
-
+`timescale 1ns/1ps
+// =======================================
+// PPU_ControlPath: Path de control del PPU
+// =======================================
 module PPU_ControlPath (
     input        clk,
     input        reset,

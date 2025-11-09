@@ -156,7 +156,17 @@ module control_unit(
             end
         endcase
 
-       control_signals = {15'b0, ALU_OP, SOH_OP, RAM_Size, RAM_RW, RAM_Enable, L, RF_LE, call, jmpl, B}; 
+        control_signals = 32'b0;
+        control_signals[16:13] = ALU_OP;
+        control_signals[12:9]  = SOH_OP;
+        control_signals[8:7]   = RAM_Size;
+        control_signals[6]     = RAM_RW;
+        control_signals[5]     = RAM_Enable;
+        control_signals[4]     = L;
+        control_signals[3]     = RF_LE;
+        control_signals[2]     = call;
+        control_signals[1]     = jmpl;
+        control_signals[0]     = B;
     end
 
 endmodule

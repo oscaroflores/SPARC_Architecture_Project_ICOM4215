@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // =======================================
 // ID/EX: registro de señales de control de EX
 // =======================================

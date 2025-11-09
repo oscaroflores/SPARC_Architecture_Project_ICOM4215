@@ -1,8 +1,6 @@
+`timescale 1ns/1ps
 // =======================================
 // PC_reg: registro del Program Counter (PC)
-// - Rising edge-triggered
-// - Reset sincrónico (inicializa a 0)
-// - Load Enable (LE)
 // =======================================
 module PC_reg (
     input clk,

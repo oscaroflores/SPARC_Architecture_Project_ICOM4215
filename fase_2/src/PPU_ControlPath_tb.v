@@ -1,13 +1,14 @@
 `timescale 1ns / 1ps
-
+// =======================================
+// Testbench para PPU_ControlPath
+// =======================================
 module PPU_ControlPath_tb;
 
     // Testbench signals
     reg clk;
     reg reset;
     reg S;
-    reg [31:0] control_signals;
-    wire [31:0]instr_IF, instr_ID, EX_ctrl, MEM_ctrl, WB_ctrl;
+    wire [31:0]instr_IF, instr_ID, EX_ctrl, MEM_ctrl, WB_ctrl, control_signals;
     wire [8:0] PC, nPC;
 
     // Instantiate the DUT (Device Under Test)
@@ -21,10 +22,11 @@ module PPU_ControlPath_tb;
         .instr_ID(instr_ID),
         .EX_ctrl(EX_ctrl),
         .MEM_ctrl(MEM_ctrl),
-        .WB_ctrl(WB_ctrl)
+        .WB_ctrl(WB_ctrl),
+        .control_signals(control_signals)
     );
 
-    // Clock generator: toggles every 2ns → period = 4ns
+    // Clock generator: toggles every 2ns for a period of 4ns
     initial begin
         clk = 0;
         forever #2 clk = ~clk;
@@ -35,7 +37,7 @@ module PPU_ControlPath_tb;
         $dumpfile("PPU_ControlPath_tb.vcd");
         $dumpvars(0, PPU_ControlPath_tb);
 
-        // Inicialización
+        // Inicialización de señales
         reset = 1;
         S = 0;
 
@@ -43,20 +45,20 @@ module PPU_ControlPath_tb;
         #3 reset = 0;
 
         // S cambia a 1 en t=40 ns
-        #40 S = 1;
+        #37 S = 1;
 
         // Finaliza en t=48 ns
-        #48;
+        #8;
         $display("=== SIMULACION FINALIZADA ===");
         $finish;
     end
 
-    // --- Instrucción decodificada (opcional) ---
+    // Variables para decodificación de instrucciones
     reg [7:0] opcode;
     reg [5:0]  opcode3;
     reg [31:0] instr_word;
 
-    // Cada flanco positivo del reloj, imprimir estado
+    // Cada rising edge del clk, decodificar y mostrar información
     always @(posedge clk) begin
         instr_word = instr_ID;
         opcode = instr_word[31:30];
@@ -64,10 +66,10 @@ module PPU_ControlPath_tb;
         $display("------------------------------------------------");
         $write("t=%0t ns | ", $time);
         case (opcode)
-            2'b00: $write("Instr=SETHI or BRANCH ");   // Format 2
-            2'b01: $write("Instr=CALL ");              // Format 1
+            2'b00: $write("Instr=SETHI or BRANCH ");    // Anadir más detalles
+            2'b01: $write("Instr=CALL ");
 
-            2'b10: begin // Format 3 – Arithmetic, Logic, Shift, Save/Restore, Trap, etc.
+            2'b10: begin
                 case (opcode3)
                     // Basic Arithmetic Instructions
                     6'b000000: $write("Instr=ADD ");
@@ -78,11 +80,13 @@ module PPU_ControlPath_tb;
                     6'b010100: $write("Instr=SUBCC ");
                     6'b001100: $write("Instr=SUBX ");
                     6'b011100: $write("Instr=SUBXCC ");
+
                     // Tagged Arithmetic Instructions
                     6'b100000: $write("Instr=TADDCC ");
                     6'b100010: $write("Instr=TADDCCTV ");
                     6'b100001: $write("Instr=TSUBCC ");
                     6'b100011: $write("Instr=TSUBCCTV ");
+
                     // Other Arithmetic Instructions
                     6'b100101: $write("Instr=MULSCC ");
                     6'b001010: $write("Instr=UMUL ");
@@ -160,11 +164,13 @@ module PPU_ControlPath_tb;
 
             default: $write("Instr=UNKNOWN OP ");
         endcase
+
         // Mostrar NPC y PC
         $display("| PC=%0d | nPC=%0d", PC, nPC);
-
+        $display(" ");
         // Mostrar señales de control
         $display("Control Signals:");
+        // $display("control_signals=%b", control_signals);
         $display("ALU_OP=%b", control_signals[16:13]);
         $display("SOH_OP=%b", control_signals[12:9]);
         $display("RAM_Size=%b", control_signals[8:7]);
@@ -175,12 +181,12 @@ module PPU_ControlPath_tb;
         $display("call=%b", control_signals[2]);
         $display("jmpl=%b", control_signals[1]);
         $display("B=%b", control_signals[0]);
-
+        $display(" ");
         // Mostrar señales de control de la etapa EX, MEM y WB
         $display("EX_ctrl=%b", EX_ctrl);
         $display("MEM_ctrl=%b", MEM_ctrl);
         $display("WB_ctrl=%b", WB_ctrl);
-
+        $display("S=%b", S);
+        $display("------------------------------------------------");
     end
-
 endmodule

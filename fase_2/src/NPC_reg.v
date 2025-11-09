@@ -1,8 +1,6 @@
+`timescale 1ns/1ps
 // =======================================
 // NPC_reg: registro del Next Program Counter (NPC)
-// - Rising edge-triggered
-// - Reset sincrónico (inicializa a 4)
-// - Load Enable (LE)
 // =======================================
 module NPC_reg (
     input clk,

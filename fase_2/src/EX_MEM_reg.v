@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // =======================================
 // EX/MEM: registro de señales de control de MEM
 // =======================================

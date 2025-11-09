@@ -27,7 +27,7 @@ module PPU_ControlPath (
     assign nPC = npc_actual;
 
     // nPC_next = nPC_actual + 4; PC_next = nPC_actual
-    assign npc_plus_4 = npc_actual + 32'd4;
+    assign npc_plus_4 = npc_actual + 32'd4;             // Implementar en modulos
     assign pc_next    = npc_actual;
     assign npc_next   = npc_plus_4;
 

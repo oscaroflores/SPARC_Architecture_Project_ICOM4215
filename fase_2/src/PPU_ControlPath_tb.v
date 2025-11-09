@@ -65,106 +65,110 @@ module PPU_ControlPath_tb;
         opcode3 = instr_word[24:19];
         $display("------------------------------------------------");
         $write("t=%0t ns | ", $time);
-        case (opcode)
-            2'b00: $write("Instr=SETHI or BRANCH ");    // Anadir más detalles
-            2'b01: $write("Instr=CALL ");
+        // Handle NOP instruction
+        if(instr_word == 32'b0) begin
+            $write("Instr=NOP ");
+        end else begin
+            case (opcode)
+                2'b00: $write("Instr=SETHI or BRANCH ");    // Anadir más detalles
+                2'b01: $write("Instr=CALL ");
 
-            2'b10: begin
-                case (opcode3)
-                    // Basic Arithmetic Instructions
-                    6'b000000: $write("Instr=ADD ");
-                    6'b010000: $write("Instr=ADDCC ");
-                    6'b001000: $write("Instr=ADDX ");
-                    6'b011000: $write("Instr=ADDXCC ");
-                    6'b000100: $write("Instr=SUB ");
-                    6'b010100: $write("Instr=SUBCC ");
-                    6'b001100: $write("Instr=SUBX ");
-                    6'b011100: $write("Instr=SUBXCC ");
+                2'b10: begin
+                    case (opcode3)
+                        // Basic Arithmetic Instructions
+                        6'b000000: $write("Instr=ADD ");
+                        6'b010000: $write("Instr=ADDCC ");
+                        6'b001000: $write("Instr=ADDX ");
+                        6'b011000: $write("Instr=ADDXCC ");
+                        6'b000100: $write("Instr=SUB ");
+                        6'b010100: $write("Instr=SUBCC ");
+                        6'b001100: $write("Instr=SUBX ");
+                        6'b011100: $write("Instr=SUBXCC ");
 
-                    // Tagged Arithmetic Instructions
-                    6'b100000: $write("Instr=TADDCC ");
-                    6'b100010: $write("Instr=TADDCCTV ");
-                    6'b100001: $write("Instr=TSUBCC ");
-                    6'b100011: $write("Instr=TSUBCCTV ");
+                        // Tagged Arithmetic Instructions
+                        6'b100000: $write("Instr=TADDCC ");
+                        6'b100010: $write("Instr=TADDCCTV ");
+                        6'b100001: $write("Instr=TSUBCC ");
+                        6'b100011: $write("Instr=TSUBCCTV ");
 
-                    // Other Arithmetic Instructions
-                    6'b100101: $write("Instr=MULSCC ");
-                    6'b001010: $write("Instr=UMUL ");
-                    6'b011010: $write("Instr=UMULCC ");
-                    6'b001001: $write("Instr=SMUL ");
-                    6'b011001: $write("Instr=SMULCC ");
-                    6'b001110: $write("Instr=UDIV ");
-                    6'b011110: $write("Instr=UDIVCC ");
-                    6'b001111: $write("Instr=SDIV ");
-                    6'b011111: $write("Instr=SDIVCC ");
+                        // Other Arithmetic Instructions
+                        6'b100101: $write("Instr=MULSCC ");
+                        6'b001010: $write("Instr=UMUL ");
+                        6'b011010: $write("Instr=UMULCC ");
+                        6'b001001: $write("Instr=SMUL ");
+                        6'b011001: $write("Instr=SMULCC ");
+                        6'b001110: $write("Instr=UDIV ");
+                        6'b011110: $write("Instr=UDIVCC ");
+                        6'b001111: $write("Instr=SDIV ");
+                        6'b011111: $write("Instr=SDIVCC ");
 
-                    // Logical Instructions
-                    6'b000001: $write("Instr=AND ");
-                    6'b010001: $write("Instr=ANDCC ");
-                    6'b000101: $write("Instr=ANDN ");
-                    6'b010101: $write("Instr=ANDNCC ");
-                    6'b000010: $write("Instr=OR ");
-                    6'b010010: $write("Instr=ORCC ");
-                    6'b000110: $write("Instr=ORN ");
-                    6'b010110: $write("Instr=ORNCC ");
-                    6'b000011: $write("Instr=XOR ");
-                    6'b010011: $write("Instr=XORCC ");
-                    6'b000111: $write("Instr=XNOR ");
-                    6'b010111: $write("Instr=XNORCC ");
+                        // Logical Instructions
+                        6'b000001: $write("Instr=AND ");
+                        6'b010001: $write("Instr=ANDCC ");
+                        6'b000101: $write("Instr=ANDN ");
+                        6'b010101: $write("Instr=ANDNCC ");
+                        6'b000010: $write("Instr=OR ");
+                        6'b010010: $write("Instr=ORCC ");
+                        6'b000110: $write("Instr=ORN ");
+                        6'b010110: $write("Instr=ORNCC ");
+                        6'b000011: $write("Instr=XOR ");
+                        6'b010011: $write("Instr=XORCC ");
+                        6'b000111: $write("Instr=XNOR ");
+                        6'b010111: $write("Instr=XNORCC ");
 
-                    // Shift Instructions
-                    6'b100101: $write("Instr=SLL ");
-                    6'b100110: $write("Instr=SRL ");
-                    6'b100111: $write("Instr=SRA ");
+                        // Shift Instructions
+                        6'b100101: $write("Instr=SLL ");
+                        6'b100110: $write("Instr=SRL ");
+                        6'b100111: $write("Instr=SRA ");
 
-                    // Save and Restore Instruction Format
-                    6'b111100: $write("Instr=SAVE ");
-                    6'b111101: $write("Instr=RESTORE ");
+                        // Save and Restore Instruction Format
+                        6'b111100: $write("Instr=SAVE ");
+                        6'b111101: $write("Instr=RESTORE ");
 
-                    // jumpl Instruction
-                    6'b111000: $write("Instr=JMPL ");
+                        // jumpl Instruction
+                        6'b111000: $write("Instr=JMPL ");
 
-                    // Trap on Integer Condition Codes
-                    6'b111010: $write("Instr=TRAP "); // These expand even more, slide 54 of CA SPARC Architecture
-                    
-                    // Return from Trap Instruction - RETT
-                    6'b111001: $write("Instr=RETT ");
+                        // Trap on Integer Condition Codes
+                        6'b111010: $write("Instr=TRAP "); // These expand even more, slide 54 of CA SPARC Architecture
+                        
+                        // Return from Trap Instruction - RETT
+                        6'b111001: $write("Instr=RETT ");
 
-                    // Read State Register Instructions
-                    6'b101001: $write("Instr=RDPSR ");
-                    6'b101010: $write("Instr=RDWIM ");
-                    6'b101011: $write("Instr=RDTBR ");
+                        // Read State Register Instructions
+                        6'b101001: $write("Instr=RDPSR ");
+                        6'b101010: $write("Instr=RDWIM ");
+                        6'b101011: $write("Instr=RDTBR ");
 
-                    // Write State Register Instructions
-                    6'b110001: $write("Instr=WRPSR ");
-                    6'b110010: $write("Instr=WRWIM ");
-                    6'b110011: $write("Instr=WRTBR ");
+                        // Write State Register Instructions
+                        6'b110001: $write("Instr=WRPSR ");
+                        6'b110010: $write("Instr=WRWIM ");
+                        6'b110011: $write("Instr=WRTBR ");
 
-                    default:   $write("Instr=UNKNOWN (op3=%b)", opcode3);
-                endcase
-            end
+                        default:   $write("Instr=UNKNOWN (op3=%b)", opcode3);
+                    endcase
+                end
 
-            2'b11: begin
-                case (opcode3)
-                    6'b001001: $write("Instr=LSB ");
-                    6'b001010: $write("Instr=LDSH ");
-                    6'b000000: $write("Instr=LD ");
-                    6'b000001: $write("Instr=LDUB ");
-                    6'b000010: $write("Instr=LDUH ");
-                    6'b000011: $write("Instr=LDD ");
-                    6'b000101: $write("Instr=STB ");
-                    6'b000110: $write("Instr=STH ");
-                    6'b000100: $write("Instr=ST ");
-                    6'b000111: $write("Instr=STD ");
-                    6'b001101: $write("Instr=LDSTUB ");
-                    6'b001111: $write("Instr=SWAP ");
-                    default:   $write("Instr=LOAD/STORE OTHER ");
-                endcase
-            end
+                2'b11: begin
+                    case (opcode3)
+                        6'b001001: $write("Instr=LSB ");
+                        6'b001010: $write("Instr=LDSH ");
+                        6'b000000: $write("Instr=LD ");
+                        6'b000001: $write("Instr=LDUB ");
+                        6'b000010: $write("Instr=LDUH ");
+                        6'b000011: $write("Instr=LDD ");
+                        6'b000101: $write("Instr=STB ");
+                        6'b000110: $write("Instr=STH ");
+                        6'b000100: $write("Instr=ST ");
+                        6'b000111: $write("Instr=STD ");
+                        6'b001101: $write("Instr=LDSTUB ");
+                        6'b001111: $write("Instr=SWAP ");
+                        default:   $write("Instr=LOAD/STORE OTHER ");
+                    endcase
+                end
 
-            default: $write("Instr=UNKNOWN OP ");
-        endcase
-
+                default: $write("Instr=UNKNOWN OP ");
+            endcase
+        end
         // Mostrar NPC y PC
         $display("| PC=%0d | nPC=%0d", PC, nPC);
         $display(" ");

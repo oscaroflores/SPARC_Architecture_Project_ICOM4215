@@ -6,13 +6,13 @@ module NPC_reg (
     input clk,
     input reset,
     input LE,
-    input [8:0] D,
-    output reg [8:0] Q
+    input [8:0] I,
+    output reg [8:0] O
 );
     always @(posedge clk) begin
         if (reset)
-            Q <= 8'd4;
+            O <= 9'd4;
         else if (LE)
-            Q <= D;
+            O <= I + 9'd4;
     end
 endmodule

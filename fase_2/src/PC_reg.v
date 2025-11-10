@@ -6,13 +6,13 @@ module PC_reg (
     input clk,
     input reset,
     input LE,
-    input [8:0] D,
-    output reg [8:0] Q
+    input [8:0] I,
+    output reg [8:0] O
 );
     always @(posedge clk) begin
         if (reset)
-            Q <= 8'd0;
+            O <= 9'd0;
         else if (LE)
-            Q <= D;
+            O <= I;
     end
 endmodule

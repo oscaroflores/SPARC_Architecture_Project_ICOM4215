@@ -21,15 +21,12 @@ module PPU_ControlPath (
 
     // ---------------- PC y nPC ----------------
     wire [8:0] pc_actual, npc_actual;
-    wire [8:0] pc_next, npc_next, npc_plus_4;
+    wire [8:0] pc_next, npc_next;
 
     assign PC  = pc_actual;
     assign nPC = npc_actual;
-
-    // nPC_next = nPC_actual + 4; PC_next = nPC_actual
-    assign npc_plus_4 = npc_actual + 32'd4;             // Implementar en modulos
-    assign pc_next    = npc_actual;
-    assign npc_next   = npc_plus_4;
+    assign pc_next  = npc_actual;
+    assign npc_next = pc_actual;
 
     // Load enable (siempre 1 por ahora)
     wire LE_PC  = 1'b1;
@@ -40,8 +37,8 @@ module PPU_ControlPath (
         .clk   (clk),
         .reset (reset),
         .LE    (LE_PC),
-        .D     (pc_next),
-        .Q     (pc_actual)
+        .I     (pc_next),
+        .O     (pc_actual)
     );
 
     // Instancia de nPC
@@ -49,8 +46,8 @@ module PPU_ControlPath (
         .clk   (clk),
         .reset (reset),
         .LE    (LE_nPC),
-        .D     (npc_next),
-        .Q     (npc_actual)
+        .I     (npc_next),
+        .O     (npc_actual)
     );
 
     // ---------------- Instruction Memory ----------------

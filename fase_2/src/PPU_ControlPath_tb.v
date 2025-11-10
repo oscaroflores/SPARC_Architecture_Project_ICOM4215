@@ -56,6 +56,7 @@ module PPU_ControlPath_tb;
     // Variables para decodificación de instrucciones
     reg [7:0] opcode;
     reg [5:0]  opcode3;
+    reg [3:0] cond;
     reg [31:0] instr_word;
 
     // Cada rising edge del clk, decodificar y mostrar información
@@ -63,6 +64,7 @@ module PPU_ControlPath_tb;
         instr_word = instr_ID;
         opcode = instr_word[31:30];
         opcode3 = instr_word[24:19];
+        cond = instr_word[28:25];
         $display("------------------------------------------------");
         $write("t=%0t ns | ", $time);
         // Handle NOP instruction
@@ -70,7 +72,27 @@ module PPU_ControlPath_tb;
             $write("Instr=NOP ");
         end else begin
             case (opcode)
-                2'b00: $write("Instr=SETHI or BRANCH ");    // Anadir más detalles
+                2'b00: begin
+                    case (cond)
+                        4'b1000: $write("Instr=BA ");
+                        4'b0000: $write("Instr=BN ");
+                        4'b1001: $write("Instr=BNE ");
+                        4'b0001: $write("Instr=BE ");
+                        4'b1010: $write("Instr=BG ");
+                        4'b0010: $write("Instr=BLE ");
+                        4'b1011: $write("Instr=BGE ");
+                        4'b0011: $write("Instr=BL ");
+                        4'b1100: $write("Instr=BGU ");
+                        4'b0100: $write("Instr=BLEU ");
+                        4'b1101: $write("Instr=BCC ");
+                        4'b0101: $write("Instr=BCS ");
+                        4'b1110: $write("Instr=BPOS ");
+                        4'b0110: $write("Instr=BNEG "); 
+                        4'b1111: $write("Instr=BVC ");
+                        4'b0111: $write("Instr=BVS ");
+                        default:   $write("Instr=UNKNOWN COND ");
+                    endcase
+                end
                 2'b01: $write("Instr=CALL ");
 
                 2'b10: begin

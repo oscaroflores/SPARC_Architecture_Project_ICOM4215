@@ -26,7 +26,7 @@ module PPU_ControlPath (
     assign PC  = pc_actual;
     assign nPC = npc_actual;
     assign pc_next  = npc_actual;
-    assign npc_next = pc_actual;
+    assign npc_next = npc_actual;
 
     // Load enable (siempre 1 por ahora)
     wire LE_PC  = 1'b1;

@@ -93,6 +93,7 @@ module PPU_ControlPath_tb;
                         default:   $write("Instr=UNKNOWN COND ");
                     endcase
                 end
+                
                 2'b01: $write("Instr=CALL ");
 
                 2'b10: begin
@@ -191,11 +192,12 @@ module PPU_ControlPath_tb;
                 default: $write("Instr=UNKNOWN OP ");
             endcase
         end
+
         // Mostrar NPC y PC
         $display("| PC=%0d | nPC=%0d", PC, nPC);
         $display(" ");
         // Mostrar señales de control
-        $display("Control Signals:");
+        $display("Control Signals=%b", control_signals);
         // $display("control_signals=%b", control_signals);
         $display("ALU_OP=%b", control_signals[16:13]);
         $display("SOH_OP=%b", control_signals[12:9]);
@@ -207,11 +209,32 @@ module PPU_ControlPath_tb;
         $display("call=%b", control_signals[2]);
         $display("jmpl=%b", control_signals[1]);
         $display("B=%b", control_signals[0]);
+        $display("CC=%b", control_signals[17]);
+        $display("ID_SR=%b", control_signals[18]);
         $display(" ");
+
         // Mostrar señales de control de la etapa EX, MEM y WB
         $display("EX_ctrl=%b", EX_ctrl);
+        $display("ALU_OP=%b", EX_ctrl[16:13]);
+        $display("SOH_OP=%b", EX_ctrl[12:9]);
+        $display("L=%b", EX_ctrl[4]);
+        $display("call=%b", EX_ctrl[2]);
+        $display("jmpl=%b", EX_ctrl[1]);
+        $display("B=%b", EX_ctrl[0]);
+        $display("CC=%b", EX_ctrl[17]);
+        $display("ID_SR=%b", EX_ctrl[18]);
+        $display(" ");
+        /////////////////////////////////////////////////
         $display("MEM_ctrl=%b", MEM_ctrl);
+        $display("RAM_Size=%b", MEM_ctrl[8:7]);
+        $display("RAM_RW=%b", MEM_ctrl[6]);
+        $display("RAM_Enable=%b", MEM_ctrl[5]);
+        $display("L=%b", MEM_ctrl[4]);
+        $display(" ");;
+        /////////////////////////////////////////////////
         $display("WB_ctrl=%b", WB_ctrl);
+        $display("RF_LE=%b", WB_ctrl[3]);
+        $display(" ");
         $display("S=%b", S);
         $display("------------------------------------------------");
     end

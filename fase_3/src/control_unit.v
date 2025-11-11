@@ -38,8 +38,8 @@ module control_unit(
         RF_LE = 1'b0;
         CALL = 1'b0;
         JMPL = 1'b0;
-        B = = 1'b0;
-        CC = op3[4]; // Set CC for arithmetic instructions
+        B = 1'b0;
+        CC = 1'b0;
         ID_SR = 1'b0;
 
         if (is_nop) begin
@@ -92,6 +92,11 @@ module control_unit(
                 // OP = 10 : Arithmetic, Logical, Shift, JMPL, etc.
                 // =======================================
                 2'b10: begin
+                    case (op3[4]) // Check if instruction sets condition codes
+                        1'b0: CC = 0;
+                        1'b1: CC = 1;
+                    endcase
+
                     case (op3)
                         // Arithmetic
                         6'b000000: begin ALU_OP = 4'b0000; RF_LE = 1; end // ADD
@@ -111,7 +116,7 @@ module control_unit(
                         6'b100111: begin ALU_OP = 4'b1100; RF_LE = 1; end // SRA
 
                         // JMPL
-                        6'b111000: begin JMPL = 1; RF_LE = 1; end
+                        6'b111000: begin JMPL = 1; RF_LE = 1; CC = 0; end
 
                         default: begin
                             ALU_OP = 4'b1111; // Unknown
@@ -123,10 +128,20 @@ module control_unit(
                 // OP = 11 : Load / Store
                 // =======================================
                 2'b11: begin
+                    case (op[1:0]) // Verifies load/store if its byte size
+                        2'b01: begin // load instructions
+                            RAM_Size = 2'b01;
+                        end
+
+                        default: begin // store instructions
+                            RAM_Size = 2'b00;
+                        end
+                    endcase
+
                     case (op3[2])
                         1'b0: begin // load instructions
+                            L = 1;
                             RAM_Enable = 1;
-                            RAM_Size = 2'b00;
                             RF_LE = 1;
                             SOH_OP = 4'b1100;
                         end
@@ -134,7 +149,6 @@ module control_unit(
                         default: begin // store instructions
                             RAM_Enable = 1;
                             RAM_RW = 1;
-                            RAM_Size = 2'b00;
                             SOH_OP = 4'b1101;
                         end
                     endcase

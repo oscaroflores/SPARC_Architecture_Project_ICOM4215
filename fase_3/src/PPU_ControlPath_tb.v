@@ -72,7 +72,7 @@ module PPU_ControlPath_tb;
             $write("Instr=NOP ");
         end else begin
             case (opcode)
-                2'b00: begin
+                2'b00: begin 
                     case (cond)
                         4'b1000: $write("Instr=BA ");
                         4'b0000: $write("Instr=BN ");
@@ -220,9 +220,7 @@ module PPU_ControlPath_tb;
         $display("L=%b", EX_ctrl[4]);
         $display("call=%b", EX_ctrl[2]);
         $display("jmpl=%b", EX_ctrl[1]);
-        $display("B=%b", EX_ctrl[0]);
         $display("CC=%b", EX_ctrl[17]);
-        $display("ID_SR=%b", EX_ctrl[18]);
         $display(" ");
         /////////////////////////////////////////////////
         $display("MEM_ctrl=%b", MEM_ctrl);
@@ -230,12 +228,11 @@ module PPU_ControlPath_tb;
         $display("RAM_RW=%b", MEM_ctrl[6]);
         $display("RAM_Enable=%b", MEM_ctrl[5]);
         $display("L=%b", MEM_ctrl[4]);
+        $display("RF_LE=%b", MEM_ctrl[3]);
         $display(" ");;
         /////////////////////////////////////////////////
         $display("WB_ctrl=%b", WB_ctrl);
         $display("RF_LE=%b", WB_ctrl[3]);
-        $display(" ");
-        $display("S=%b", S);
         $display("------------------------------------------------");
     end
 endmodule

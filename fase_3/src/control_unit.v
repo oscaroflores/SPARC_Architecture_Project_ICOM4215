@@ -28,7 +28,7 @@ module control_unit(
 
     always @(*) begin
         ALU_OP = 4'b0000;
-        SOH_OP = {I[31], I[30], I[24], I[13]};
+        SOH_OP = 4'b0000;
         RAM_Size = 2'b00;
         RAM_RW = 1'b0;
         RAM_Enable = 1'b0;
@@ -38,7 +38,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 1'b0;
+        ID_SR = 2'b0;
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -52,7 +52,7 @@ module control_unit(
             JMPL = 1'b0;
             B = 1'b0;
             CC = 1'b0;
-            ID_SR = 1'b0;
+            ID_SR = 2'b0;
         end else begin
             case (op)
                 
@@ -176,7 +176,7 @@ module control_unit(
 
         // Unimos todas las señales en el bus control_signals
         control_signals = 32'b0;
-        control_signals[18]    = ID_SR;
+        control_signals[19:18]    = ID_SR;
         control_signals[17]    = CC;
         control_signals[16:13] = ALU_OP;
         control_signals[12:9]  = SOH_OP;

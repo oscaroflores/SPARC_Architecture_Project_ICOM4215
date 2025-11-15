@@ -213,7 +213,7 @@ module PPU_ControlPath_tb;
         $display("jmpl=%b", control_signals[1]);
         $display("B=%b", control_signals[0]);
         $display("CC=%b", control_signals[17]);
-        $display("ID_SR=%b", control_signals[18]);
+        $display("ID_SR=%b", control_signals[19:18]);
         $display(" ");
 
         // Mostrar señales de control de la etapa EX, MEM y WB

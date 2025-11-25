@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module control_unit(
-    input [31:0] I,
+    input  [31:0] I,
     output reg [31:0] control_signals
 );
     wire [1:0] op    = I[31:30];   
@@ -38,7 +38,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 1'b0;
+        ID_SR = 2'b0;
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -52,9 +52,10 @@ module control_unit(
             JMPL = 1'b0;
             B = 1'b0;
             CC = 1'b0;
-            ID_SR = 1'b0;
+            ID_SR = 2'b0;
         end else begin
             case (op)
+                
                 
                 // OP = 00 : Branches and SETHI
                 2'b00: begin
@@ -62,6 +63,8 @@ module control_unit(
                         3'b100: begin // SETHI
                         B = 0;
                         RF_LE = 1;
+                        ALU_OP = 4'b1110;
+                        SOH_OP = 4'b0000;
                         ALU_OP = 4'b1110;
                         SOH_OP = 4'b0000;
                         RAM_Size = 2'b01;
@@ -76,6 +79,7 @@ module control_unit(
                         end
                     endcase
                 end
+                
                 
                 // OP = 01 : CALL
                 2'b01: begin
@@ -157,6 +161,7 @@ module control_unit(
                             RAM_Enable = 1;
                             RF_LE = 1;
                             SOH_OP = (i_bit ? 4'b1101 : 4'b1100);
+                            SOH_OP = (i_bit ? 4'b1101 : 4'b1100);
                         end
 
                         default: begin // Store
@@ -176,7 +181,7 @@ module control_unit(
 
         // Unimos todas las señales en el bus control_signals
         control_signals = 32'b0;
-        control_signals[18]    = ID_SR;
+        control_signals[19:18]    = ID_SR;
         control_signals[17]    = CC;
         control_signals[16:13] = ALU_OP;
         control_signals[12:9]  = SOH_OP;

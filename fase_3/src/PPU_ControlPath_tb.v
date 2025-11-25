@@ -1,7 +1,3 @@
-`timescale 1ns / 1ps
-// =======================================
-// Testbench para PPU_ControlPath
-// =======================================
 module PPU_ControlPath_tb;
 
     // Testbench signals
@@ -217,7 +213,7 @@ module PPU_ControlPath_tb;
         $display("jmpl=%b", control_signals[1]);
         $display("B=%b", control_signals[0]);
         $display("CC=%b", control_signals[17]);
-        $display("ID_SR=%b", control_signals[18]);
+        $display("ID_SR=%b", control_signals[19:18]);
         $display(" ");
 
         // Mostrar señales de control de la etapa EX, MEM y WB
@@ -228,7 +224,13 @@ module PPU_ControlPath_tb;
         $display("call=%b", EX_ctrl[2]);
         $display("jmpl=%b", EX_ctrl[1]);
         $display("CC=%b", EX_ctrl[17]);
+        $display("MEM_ctrl=%b", MEM_ctrl);
+        $display("RAM_Size=%b", MEM_ctrl[8:7]);
+        $display("RAM_RW=%b", MEM_ctrl[6]);
+        $display("RAM_Enable=%b", MEM_ctrl[5]);
+        $display("RF_LE=%b", MEM_ctrl[3]);
         $display(" ");
+
         /////////////////////////////////////////////////
         $display("MEM_ctrl=%b", MEM_ctrl);
         $display("RAM_Size=%b", MEM_ctrl[8:7]);
@@ -236,7 +238,8 @@ module PPU_ControlPath_tb;
         $display("RAM_Enable=%b", MEM_ctrl[5]);
         $display("L=%b", MEM_ctrl[4]);
         $display("RF_LE=%b", MEM_ctrl[3]);
-        $display(" ");;
+        $display(" ");
+        
         /////////////////////////////////////////////////
         $display("WB_ctrl=%b", WB_ctrl);
         $display("RF_LE=%b", WB_ctrl[3]);

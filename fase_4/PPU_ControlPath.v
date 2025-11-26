@@ -1,7 +1,5 @@
 `timescale 1ns/1ps
-// =======================================
-// PPU_ControlPath: Path de control del PPU
-// =======================================
+
 module PPU_ControlPath (
     input        clk,
     input        reset,
@@ -12,12 +10,24 @@ module PPU_ControlPath (
     output [8:0] nPC,
     output [31:0] instr_IF,
     output [31:0] instr_ID,
+    output [31:0] instr_EX,
+    output [31:0] instr_MEM,
+    output [31:0] instr_WB,
     output [31:0] EX_ctrl,
     output [31:0] MEM_ctrl,
     output [31:0] WB_ctrl,
     output [31:0] control_signals
 
 );
+
+
+
+
+    // ==============================================================================
+    // ==============================================================================
+    // Fetch Stage
+    // ==============================================================================
+    // ==============================================================================
 
     // ---------------- PC y nPC ----------------
     wire [8:0] pc_actual, npc_actual;
@@ -28,6 +38,71 @@ module PPU_ControlPath (
     assign pc_next  = npc_actual;
     assign npc_next = npc_actual;
 
+    // Instancia de PC
+    PC_reg PC0 (
+        .clk   (clk),
+        .reset (reset),
+        .LE    (LE_PC),
+        .I     (pc_next),
+        .O     (pc_actual)
+    );
+
+    // Instancia de nPC
+    NPC_reg NPC0 (
+        .clk   (clk),
+        .reset (reset),
+        .LE    (LE_nPC),
+        .I     (npc_next),
+        .O     (npc_actual)
+    );
+
+    instruction_memory IMEM (
+        .A(pc_actual[8:0]),   // dirección en bytes: PC[8:0]
+        .I(instr_IF)
+    );
+
+
+    // ==============================================================================
+    // ==============================================================================
+    // Decode Stage
+    // ==============================================================================
+    // ==============================================================================
+    
+    wire [8:0] B_PC_ID;
+    
+    IF_ID_reg IF_ID (
+        .clk      (clk),
+        .reset    (reset),
+        .instr_in (instr_IF),
+        .pc_in    (pc_actual),   // añade este puerto al módulo IF_ID_reg
+        .instr_out(instr_ID),
+        .pc_out   (B_PC_ID)
+    );
+
+    // ---------------- TAG ----------------
+    // Sign extend a 30 bits:
+    wire [29:0] disp22_ext = { {8{instr_ID[21]}}, instr_ID[21:0] };
+    wire [29:0] disp30 = instr_ID[29:0];
+    wire [29:0] TAG_Offset;
+    wire [8:0] TA;   // en el diagrama aparece “/9” a la salida de TA
+    wire CALL_ID = id_ctrl_mux[2];
+
+    TAG #(
+        .PC_WIDTH(9),
+        .OFFSET_WIDTH(30)
+    ) TAG0 (
+        .B_PC   (B_PC_ID),
+        .Offset (TAG_Offset),
+        .TA     (TA)
+    );
+
+    // Mux para offset del TAG
+    TAG_OffsetMux #(.WIDTH(30)) TAGMUX (
+        .CALL      (CALL_ID),        // viene de la control_unit
+        .offset22  (disp22_ext),
+        .offset30  (disp30),
+        .OffsetOut (TAG_Offset)
+    );
 
     // Load enable (siempre 1 por ahora)
     wire LE_PC  = 1'b1;
@@ -35,8 +110,16 @@ module PPU_ControlPath (
 
     // ---------------- Reg File ----------------
     wire [31:0] PA_rf, PB_rf, PD_rf;   // three read buses out of RF
-    wire [4:0]  RA_rf, RB_rf, RD_rf;   // read addresses from IF/ID (rs1, rs2, rd/rsd)
-    wire [4:0]  RW_rf;                 // write address from WB stage (destination reg)
+
+    // =============== Decode register numbers from instr_ID (Format 3) ===============
+    wire [4:0] RA_rf;
+    wire [4:0] RB_rf;
+    wire [4:0] RD_rf;
+    wire [4:0] RW_rf;
+    assign RA_rf = instr_ID[18:14];   // rs1
+    assign RB_rf = instr_ID[4:0];     // rs2 (when i = 0, load/store/arithmetic reg form)
+    assign RD_rf = instr_ID[29:25];   // rd (used as 3rd source for stores, etc.)    wire [4:0]  RW_rf;                 // write address from WB stage (destination reg)
+
     wire [31:0] PW_rf;                 // write data from WB mux (ALU/MEM/PC, etc.)
     wire        RF_LE;                 // register-file load enable (from CU in WB)
 
@@ -56,137 +139,12 @@ module PPU_ControlPath (
         .Clk(clk)      // <- system clock
     );
 
-    // ======= Operand sources (no forwarding yet – stub) =======
-    // For now, since EX/MEM/WB datapath and hazard unit are not implemented,
-    // just use the raw register file outputs as the operand sources.
-    // Later, you can replace these with ForwardMux instances once
-    // ALU_Out_EX, Result_MEM, Result_WB, sel_A/sel_B/sel_D, etc. exist.
 
+    // Operandos después de los muxes de forwarding (entrada a ID/EX)
     wire [31:0] A_src;
     wire [31:0] B_src;
     wire [31:0] D_src;
-
-    assign A_src = PA_rf;
-    assign B_src = PB_rf;
-    assign D_src = PD_rf;
-
-    /*
-    // Example of how forwarding will look once the rest of the datapath exists:
-
-    // Example MEM stage composite result (always 32 bits):
-    // wire [8:0]  TA_mem;
-    // wire [31:0] TA_mem_ext = {{23{TA_mem[8]}}, TA_mem};
-    // wire [31:0] ALU_MEM_out;
-    // wire [31:0] LoadData_MEM;
-    // wire        is_branch_mem, is_load_mem;
-    // wire [31:0] Result_MEM = is_branch_mem ? TA_mem_ext :
-    //                          is_load_mem   ? LoadData_MEM :
-    //                                          ALU_MEM_out;
-
-    // Example WB stage composite result (always 32 bits):
-    // wire [8:0]  TA_wb;
-    // wire [31:0] TA_wb_ext = {{23{TA_wb[8]}}, TA_wb};
-    // wire [31:0] ALU_WB_out, LoadData_WB;
-    // wire        is_branch_wb, is_load_wb;
-    // wire [31:0] Result_WB = is_branch_wb ? TA_wb_ext :
-    //                         is_load_wb   ? LoadData_WB :
-    //                                        ALU_WB_out;
-
-    // wire [1:0] sel_A, sel_B, sel_D;
-
-    // ForwardMux #(.WIDTH(32)) mux_A (
-    //     .in0 (PA_rf),
-    //     .in1 (ALU_Out_EX),
-    //     .in2 (Result_MEM),
-    //     .in3 (Result_WB),
-    //     .sel (sel_A),
-    //     .out (A_src)
-    // );
-
-    // ForwardMux #(.WIDTH(32)) mux_B (
-    //     .in0 (PB_rf),
-    //     .in1 (ALU_Out_EX),
-    //     .in2 (Result_MEM),
-    //     .in3 (Result_WB),
-    //     .sel (sel_B),
-    //     .out (B_src)
-    // );
-
-    // ForwardMux #(.WIDTH(32)) mux_D (
-    //     .in0 (PD_rf),
-    //     .in1 (ALU_Out_EX),
-    //     .in2 (Result_MEM),
-    //     .in3 (Result_WB),
-    //     .sel (sel_D),
-    //     .out (D_src)
-    // );
-    */
-
-    // disp22 = instr_ID[21:0]
-    // Sign extend a 30 bits:
-    wire [29:0] disp22_ext = { {8{instr_ID[21]}}, instr_ID[21:0] };
-    wire [29:0] disp30 = instr_ID[29:0];
-    wire [29:0] TAG_Offset;
-    wire [8:0] B_PC;
-    wire [8:0] TA;   // en el diagrama aparece “/9” a la salida de TA
-    wire CALL = id_ctrl_mux[2];
-
-    TAG #(
-        .PC_WIDTH(9),
-        .OFFSET_WIDTH(30)
-    ) TAG0 (
-        .B_PC   (B_PC),
-        .Offset (TAG_Offset),
-        .TA     (TA)
-    );
-
-    // Mux para offset del TAG
-    TAG_OffsetMux #(.WIDTH(30)) TAGMUX (
-        .CALL      (CALL),        // viene de la control_unit
-        .offset22  (disp22_ext),
-        .offset30  (disp30),
-        .OffsetOut (TAG_Offset)
-    );
-
     
-    // Instancia de PC
-    PC_reg PC0 (
-        .clk   (clk),
-        .reset (reset),
-        .LE    (LE_PC),
-        .I     (pc_next),
-        .O     (pc_actual)
-    );
-
-    // Instancia de nPC
-    NPC_reg NPC0 (
-        .clk   (clk),
-        .reset (reset),
-        .LE    (LE_nPC),
-        .I     (npc_next),
-        .O     (npc_actual)
-    );
-
-    // ---------------- Instruction Memory ----------------
-    instruction_memory IMEM (
-        .A(pc_actual[8:0]),   // dirección en bytes: PC[8:0]
-        .I(instr_IF)
-    );
-
-    // ---------------- IF/ID: instrucción hacia la CU ----------------
-    wire [8:0] B_PC_ID;
-
-    IF_ID_reg IF_ID (
-        .clk      (clk),
-        .reset    (reset),
-        .instr_in (instr_IF),
-        .pc_in    (pc_actual),   // añade este puerto al módulo IF_ID_reg
-        .instr_out(instr_ID),
-        .pc_out   (B_PC_ID)
-    );
-
-    assign B_PC = B_PC_ID;
-
     // ---------------- Control Unit (en etapa ID) ----------------
     control_unit CU (
         .I         (instr_ID),
@@ -202,29 +160,195 @@ module PPU_ControlPath (
         .id_ctrl_out (id_ctrl_mux)
     );
 
-    // ---------------- Registros de pipeline de control ----------------
-    // ID/EX
+    wire [1:0] sel_A, sel_B, sel_D;
+    assign sel_A = 2'b00;
+    assign sel_B = 2'b00;
+    assign sel_D = 2'b00;
+
+    ForwardMux #(.WIDTH(32)) mux_A (
+        .in0 (PA_rf),
+        .in1 (ALU_Out_EX),
+        .in2 (WB_Data),
+        .in3 (PW_WB),
+        .sel (sel_A), // change
+        .out (A_src)
+    );
+
+    ForwardMux #(.WIDTH(32)) mux_B (
+        .in0 (PB_rf),
+        .in1 (ALU_Out_EX),
+        .in2 (WB_Data),
+        .in3 (PW_WB),
+        .sel (sel_B), // change
+        .out (B_src)
+    );
+
+    ForwardMux #(.WIDTH(32)) mux_D (
+        .in0 (PD_rf),
+        .in1 (ALU_Out_EX),
+        .in2 (WB_Data),
+        .in3 (PW_WB),
+        .sel (sel_D), // change
+        .out (D_src)
+    );
+    
+    // ==============================================================================
+    // ==============================================================================
+    // Execution stage
+    // ==============================================================================
+    // ==============================================================================
+    
+    wire [3:0] Condition_Codes;
+    wire [31:0] SOH_out;
+    wire Ci_EX = 1'b0; // For now, no carry-in from PSR; tie to 0. Later you can replace this with the C flag from PSR/WB.
+    wire [31:0] A_EX, B_EX, D_EX;
+
     ID_EX_reg ID_EX (
         .clk        (clk),
         .reset      (reset),
+
+        // control
         .id_ctrl_in (id_ctrl_mux),
-        .ex_ctrl_out(EX_ctrl)
+        .ex_ctrl_out(EX_ctrl),
+
+        // instrucción
+        .instr_ID   (instr_ID),   // o instr_ID, si así llamas al bus en ID
+        .instr_EX   (instr_EX),
+
+        // datos
+        .A_ID       (A_src),
+        .B_ID       (B_src),
+        .D_ID       (D_src),
+        .A_EX       (A_EX),
+        .B_EX       (B_EX),
+        .D_EX       (D_EX)
     );
+
+    // Ahora puedes “cherry pick” los campos desde instr_EX
+    wire [4:0] RD_EX = instr_EX[29:25]; // rd
+    wire [4:0] RS1_EX = instr_EX[18:14];
+    wire [4:0] RS2_EX = instr_EX[4:0];
+    wire       i_EX   = instr_EX[13];
+
+    SOH soh0 (
+        .R   (B_EX),          // register operand
+        .Imm (instr_EX[21:0]), // immediate field (disp/simm/etc. per spec)
+        .Is  (EX_ctrl[12:9]),  // SOH_OP from EX-stage control
+        .N   (SOH_out)         // output second operand when using immediates
+    );
+
+    wire [31:0] ALU_Out_EX;
+
+    ALU alu0 (
+        .Out (ALU_Out_EX),
+        .Z   (Z_EX),
+        .N   (N_EX),
+        .C   (C_EX),
+        .V   (V_EX),
+        .A   (A_src),          // from RF or forwarding mux (stub now)
+        .B   (SOH_out),          // from B_src or SOH_out
+        .Ci  (Ci_EX),
+        .OP  (EX_ctrl[16:13])  // ALU_OP
+    );
+
+    wire [31:0] mux_out;
+
+    wire [31:0] B_PC_EX_ext = {23'b0, B_PC_EX};
+
+    TwoToOneMux #(.WIDTH(32)) ALU_out_mux (
+        .in0 (ALU_Out_EX),
+        .in1 (B_PC_EX_ext),
+        .sel (EX_ctrl[2]),
+        .out (mux_out)
+    );
+
+    wire [4:0] RD_EX_muxed;  // this will be the output of the mux
+
+    TwoToOneMux #(.WIDTH(5)) CALL_RD_MUX (
+        .in0 (RD_EX),
+        .in1 (5'd15),
+        .sel (EX_ctrl[2]),   // CALL bit
+        .out (RD_EX_muxed)
+    );
+
+    // ==============================================================================
+    // ==============================================================================
+    // MEM stage
+    // ==============================================================================
+    // ==============================================================================
+
+    // wires para la etapa MEM
+    wire [31:0] D_MEM_out;
+    wire [4:0]  RD_MEM_out;
+
+    // Ahora ALU_MEM_out vendrá del EX/MEM_reg
+    wire [31:0] ALU_MEM_out;
+
+    wire [4:0] instr_RD_EX = instr_EX[29:25];
+    
+    wire [8:0] B_PC_EX;   // PC value pipelined from ID to EX
 
     // EX/MEM
     EX_MEM_reg EX_MEM (
-        .clk         (clk),
-        .reset       (reset),
-        .ex_ctrl_in (EX_ctrl),
-        .mem_ctrl_out(MEM_ctrl)
+        .clk            (clk),
+        .reset          (reset),
+
+        // control
+        .ex_ctrl_in     (EX_ctrl),
+        .mem_ctrl_out   (MEM_ctrl),
+
+        // datos
+        .ex_third_op_in (D_EX),        // dato del 3er operando (para stores)
+        .ex_alu_out_in  (mux_out),     // resultado del ALU en EX
+        .ex_rd_in       (RD_EX),       // número de registro destino
+
+        // salidas hacia MEM
+        .mem_third_op_out (D_MEM_out),
+        .mem_alu_out      (ALU_MEM_out),
+        .mem_rd_out       (RD_MEM_out)
     );
 
-    // MEM/WB
+    data_memory data_mem0 (
+        .DI   (D_MEM_out),          // o directamente D_MEM_out
+        .A    (ALU_MEM_out[8:0]),   // aquí deberías usar solo los 9 bits bajos
+        .Size (MEM_ctrl[8:7]),
+        .RW   (MEM_ctrl[6]),
+        .E    (MEM_ctrl[5]),
+        .DO   (D_MEM_out)
+    );
+
+    // Resultado seleccionado en MEM (ALU vs Data Memory)
+    wire [31:0] WB_Data;
+
+    TwoToOneMux #(.WIDTH(32)) MEM_stage_mux (
+        .in0 (ALU_MEM_out),
+        .in1 (D_MEM_out),   // <- this is the real 32-bit memory output
+        .sel (MEM_ctrl[4]),
+        .out (WB_Data)
+    );
+
+    // ==============================================================================
+    // ==============================================================================
+    // Write Back Stage
+    // ==============================================================================
+    // ==============================================================================
+
+    // Write-back stage wires
+    wire [31:0] PW_WB;    // data to write to RF
+    wire [4:0]  RD_WB;    // destination register in WB
+
     MEM_WB_reg MEM_WB (
-        .clk        (clk),
-        .reset      (reset),
+        .clk         (clk),
+        .reset       (reset),
+
         .mem_ctrl_in (MEM_ctrl),
-        .wb_ctrl_out(WB_ctrl)
+        .wb_ctrl_out (WB_ctrl),
+
+        .pw_data_in  (WB_Data),      // from MEM_stage_mux
+        .pw_data_out (PW_WB),
+
+        .rd_in       (RD_MEM_out),   // this should come from RD_EX_muxed pipelined through EX/MEM
+        .rd_out      (RD_WB)
     );
 
 endmodule

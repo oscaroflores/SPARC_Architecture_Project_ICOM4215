@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // =======================================================
 // TAG_OffsetMux
 // Selecciona el offset correcto para el TAG:

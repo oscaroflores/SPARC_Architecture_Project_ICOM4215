@@ -53,11 +53,13 @@ cd /Users/osk/Verilog/sparc_arch/fase_4
 ```
 iverilog -g2012 -o PPU_ControlPath_tb.vvp \
   testbenches/PPU_ControlPath_tb.v \
+  testbenches/PPU_ControlPath.v \
   "fetch stage"/*.v \
   "decoding stage"/*.v \
   "execute stage"/*.v \
   "memory stage"/*.v \
-  pipelines/*.v
+  pipelines/*.v \
+  *.v
 ```
 4. Run the generated simulation:
 ```

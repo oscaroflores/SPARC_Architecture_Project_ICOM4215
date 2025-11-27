@@ -45,14 +45,19 @@ gtkwave dump.vcd
 # Running the PPU_ControlPath testbench (Windows + Icarus Verilog)
 
 1. Open Command Prompt or PowerShell.
-2. Navigate to the source folder for this phase:
+2. Navigate to the verilog source folder for this phase:
 ```
-cd fase_2
-cd src
+cd /Users/osk/Verilog/sparc_arch/fase_4
 ```
 3. Compile all Verilog source files (including the testbench):
 ```
-iverilog -o PPU_ControlPath_tb.vvp *.v
+iverilog -g2012 -o PPU_ControlPath_tb.vvp \
+  testbenches/PPU_ControlPath_tb.v \
+  "fetch stage"/*.v \
+  "decoding stage"/*.v \
+  "execute stage"/*.v \
+  "memory stage"/*.v \
+  pipelines/*.v
 ```
 4. Run the generated simulation:
 ```

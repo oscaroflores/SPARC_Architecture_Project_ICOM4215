@@ -14,8 +14,8 @@ module fetch_path #(
     input  wire reset,
 
     // Enables para poder hacer stalls más adelante
-    input  wire pc_we,
-    input  wire npc_we,
+    input  wire pc_LE,
+    input  wire npc_LE,
 
     // Señales de control
     input  wire jmpl,   // control de instrucción JMPL
@@ -133,9 +133,9 @@ module fetch_path #(
             PC_reg  <= RESET_PC;
             nPC_reg <= RESET_nPC;
         end else begin
-            if (pc_we)
+            if (pc_LE)
                 PC_reg <= mux_PC_next_src;
-            if (npc_we)
+            if (npc_LE)
                 nPC_reg <= mux_nPC_next_src;
         end
     end

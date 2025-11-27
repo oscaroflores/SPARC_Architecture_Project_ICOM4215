@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module PPU_ControlPath_tb;
 
     // Testbench signals

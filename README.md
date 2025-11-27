@@ -70,11 +70,6 @@ vvp PPU_ControlPath_tb.vvp
 gtkwave PPU_ControlPath_tb.vcd
 ```
 
-Shortcut (single line):
-```
-cd fase_2\src && iverilog -o PPU_ControlPath_tb.vvp *.v && vvp PPU_ControlPath_tb.vvp
-```
-
 Notes:
 - Ensure the testbench file is in the same src directory so the wildcard (*.v) picks it up.
 - Add or remove source files as the design grows; wildcard recompiles everything each time.

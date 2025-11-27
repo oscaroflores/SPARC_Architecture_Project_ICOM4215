@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 /* Tarea:
 En la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del ALU que se debe
 implementar. El ALU es un circuito combinacional (el efecto de las entradas se puede manifestar en las salidas

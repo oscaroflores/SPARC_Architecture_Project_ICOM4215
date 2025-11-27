@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // TAG: Target Address Generator
 // Calcula TA = B_PC + (Offset << 2)
 // - Soporta branches (disp22 extendido a 30 bits) y CALL (disp30)

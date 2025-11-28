@@ -10,6 +10,10 @@ module ID_EX_reg (
     input  [31:0] id_ctrl_in,
     output reg [31:0] ex_ctrl_out,
 
+    // RD
+    input [4:0] rd_ID,
+    output reg [4:0] rd_EX,
+
     // Instrucción completa en ID (sale en EX)
     input  [31:0] instr_ID,
     output reg [31:0] instr_EX,

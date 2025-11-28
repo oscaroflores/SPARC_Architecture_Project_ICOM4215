@@ -13,6 +13,6 @@ module NPC_reg (
         if (reset)
             O <= 9'd4;
         else if (LE)
-            O <= I + 9'd4;
+            O <= I;
     end
 endmodule

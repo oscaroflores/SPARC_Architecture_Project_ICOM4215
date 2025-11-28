@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module PPU_ControlPath (
+module circuit (
     input        clk,
     input        reset,
 
@@ -24,39 +24,130 @@ module PPU_ControlPath (
     // Fetch Stage
     // ==============================================================================
     // ==============================================================================
+    localparam ADDR_WIDTH = 9;
+    localparam INST_WIDTH = 32;
+    localparam [ADDR_WIDTH-1:0] RESET_PC  = {ADDR_WIDTH{1'b0}};
+    localparam [ADDR_WIDTH-1:0] RESET_nPC = 9'd4;  // PC=0, nPC=4 (byte addresses)
 
-    // ---------------- PC y nPC ----------------
-    wire [8:0] pc_actual, npc_actual;
-    wire [8:0] pc_next, npc_next;
+    // =========================================================================
+    // FETCH STAGE (PC, nPC, OR, MUXes, ALU+4, Instruction Memory)
+    // =========================================================================
 
-    assign PC  = pc_actual;
-    assign nPC = npc_actual;
-    assign pc_next  = npc_actual;
-    assign npc_next = npc_actual;
+    // Registros PC y nPC
+    reg [ADDR_WIDTH-1:0] PC_reg;
+    reg [ADDR_WIDTH-1:0] nPC_reg;
 
-    // Instancia de PC
-    PC_reg PC0 (
-        .clk   (clk),
-        .reset (reset),
-        .LE    (LE_PC),
-        .I     (pc_next),
-        .O     (pc_actual)
+    // Asignar salidas del módulo (para debug)
+    assign PC  = PC_reg;
+    assign nPC = nPC_reg;
+
+    // Enables para PC y nPC (por ahora siempre 1; luego se conectan a hazard unit)
+    wire pc_LE  = 1'b1;
+    wire npc_LE = 1'b1;
+
+    // Señales de control de salto (por ahora stubs: luego saldrán del condition handler / CU)
+    wire jmpl;
+    wire J;
+
+    // Para el camino de JMPL usamos sólo los 9 bits bajos del ALU_Out_EX
+    wire [ADDR_WIDTH-1:0] ALU_out_pc = ALU_Out_EX[ADDR_WIDTH-1:0];
+
+    // Wires internos del fetch path
+    wire [ADDR_WIDTH-1:0] TA_plus4;
+    wire [ADDR_WIDTH-1:0] nPC_plus4;
+    wire [ADDR_WIDTH-1:0] ALUout_plus4;
+
+    wire branch_or_jmpl;
+
+    wire [ADDR_WIDTH-1:0] mux_TA_nPC_plus4_out; // escoge entre nPC+4 y TA+4
+    wire [ADDR_WIDTH-1:0] mux_TA_nPC_out;       // escoge entre nPC y TA
+    wire [ADDR_WIDTH-1:0] mux_nPC_next_src;     // entrada final de nPC
+    wire [ADDR_WIDTH-1:0] mux_PC_next_src;      // entrada final de PC
+
+    // OR gate: jumpl OR J
+    or2 u_or_branch_jmpl (
+        .a(jmpl),
+        .b(J),
+        .y(branch_or_jmpl)
     );
 
-    // Instancia de nPC
-    NPC_reg NPC0 (
-        .clk   (clk),
-        .reset (reset),
-        .LE    (LE_nPC),
-        .I     (npc_next),
-        .O     (npc_actual)
+    // ALU: TA + 4
+    alu_add4 #(.WIDTH(ADDR_WIDTH)) u_add4_TA (
+        .A(TA),
+        .R(TA_plus4)
     );
 
-    instruction_memory IMEM (
-        .A(pc_actual[8:0]),   // dirección en bytes: PC[8:0]
-        .I(instr_IF)
+    // ALU: nPC + 4
+    alu_add4 #(.WIDTH(ADDR_WIDTH)) u_add4_nPC (
+        .A(nPC_reg),
+        .R(nPC_plus4)
     );
 
+    // ALU: ALU_out + 4 (para JMPL)
+    alu_add4 #(.WIDTH(ADDR_WIDTH)) u_add4_ALUout (
+        .A(ALU_out_pc),
+        .R(ALUout_plus4)
+    );
+
+    // Primer par de muxes (controlados por OR(jmpl, J))
+    // Mux 1: escoge entre nPC+4 (secuencial) y TA+4 (brinco)
+    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
+        .d0(nPC_plus4),       // camino normal: nPC + 4
+        .d1(TA_plus4),        // camino de salto: TA + 4
+        .sel(branch_or_jmpl),
+        .y(mux_TA_nPC_plus4_out)
+    );
+
+    // Mux 2: escoge entre nPC y TA para el PC
+    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC (
+        .d0(nPC_reg),         // camino normal: PC <- nPC
+        .d1(TA),              // camino de salto: PC <- TA
+        .sel(branch_or_jmpl),
+        .y(mux_TA_nPC_out)
+    );
+
+    // Segundo par de muxes (controlados directamente por jumpl)
+
+    // Mux 3: entrada final del registro nPC
+    // Entradas: (TA+4 / nPC+4) vs (ALU_out + 4)
+    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_nPC_next (
+        .d0(mux_TA_nPC_plus4_out), // normal / branch
+        .d1(ALUout_plus4),         // JMPL
+        .sel(jmpl),
+        .y(mux_nPC_next_src)
+    );
+
+    // Mux 4: entrada final del registro PC
+    // Entradas: (TA / nPC) vs ALU_out directo
+    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_PC_next (
+        .d0(mux_TA_nPC_out),   // normal / branch
+        .d1(ALU_out_pc),       // JMPL
+        .sel(jmpl),
+        .y(mux_PC_next_src)
+    );
+
+    // Registros PC y nPC
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            PC_reg  <= RESET_PC;
+            nPC_reg <= RESET_nPC;
+        end else begin
+            if (pc_LE)
+                PC_reg <= mux_PC_next_src;
+            if (npc_LE)
+                nPC_reg <= mux_nPC_next_src;
+        end
+    end
+
+    // Instruction Memory
+    Instruction_Memory u_imem (
+        .A(PC_reg),      // dirección = PC de 9 bits
+        .I(instr_IF)     // instrucción de 32 bits hacia IF/ID
+    );
+
+    // PC que va al IF/ID para usarlo como B_PC en ID
+    wire [ADDR_WIDTH-1:0] B_PC;
+    assign B_PC = PC_reg;
 
     // ==============================================================================
     // ==============================================================================
@@ -66,19 +157,14 @@ module PPU_ControlPath (
         .clk      (clk),
         .reset    (reset),
         .instr_in (instr_IF),
-        .pc_in    (pc_actual),   // añade este puerto al módulo IF_ID_reg
+        .pc_in    (B_PC),   // añade este puerto al módulo IF_ID_reg
         .instr_out(instr_ID),
         .pc_out   (B_PC_ID)
     );
     // ==============================================================================
     // ==============================================================================
     
-    // ==============================================================================
-    // ==============================================================================
-    // Decode Stage
-    // ==============================================================================
-    // ==============================================================================
-    
+
     // ---------------- TAG ----------------
     // Sign extend a 30 bits:
     wire [29:0] disp22_ext = { {8{instr_ID[21]}}, instr_ID[21:0] };

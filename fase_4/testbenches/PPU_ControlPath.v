@@ -164,7 +164,7 @@ module PPU_ControlPath (
     assign sel_B = 2'b00;
     assign sel_D = 2'b00;
 
-    ForwardMux #(.WIDTH(32)) mux_A (
+    FourToOneMux #(.WIDTH(32)) mux_A (
         .in0 (PA_rf),
         .in1 (ALU_Out_EX),
         .in2 (WB_Data),
@@ -173,7 +173,7 @@ module PPU_ControlPath (
         .out (A_src)
     );
 
-    ForwardMux #(.WIDTH(32)) mux_B (
+    FourToOneMux #(.WIDTH(32)) mux_B (
         .in0 (PB_rf),
         .in1 (ALU_Out_EX),
         .in2 (WB_Data),
@@ -182,7 +182,7 @@ module PPU_ControlPath (
         .out (B_src)
     );
 
-    ForwardMux #(.WIDTH(32)) mux_D (
+    FourToOneMux #(.WIDTH(32)) mux_D (
         .in0 (PD_rf),
         .in1 (ALU_Out_EX),
         .in2 (WB_Data),

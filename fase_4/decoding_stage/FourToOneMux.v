@@ -7,7 +7,7 @@
 //  - sel = 10 -> in2 (MEM stage value)
 //  - sel = 11 -> in3 (WB stage value)
 // =======================================
-module ForwardMux #(
+module FourToOneMux #(
     parameter WIDTH = 32
 ) (
     input  [WIDTH-1:0] in0,   // from 3-port register file (PA / PB / PD)

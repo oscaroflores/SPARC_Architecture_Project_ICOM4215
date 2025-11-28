@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module MEM_WB_reg (
     input        clk,
     input        reset,

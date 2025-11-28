@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 /*
 Tarea:
 En el diagrama de la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del circuito que

@@ -1,4 +1,4 @@
-  
+
 // Autor: Elian Graciano Vazquez
 // Titulo: SPARC Three-Port Register File 
 ////////////////////////////////////////////

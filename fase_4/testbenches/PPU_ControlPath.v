@@ -164,10 +164,6 @@ localparam ADDR_WIDTH = 9;
 
     // ==============================================================================
     // ==============================================================================
-    // Decode Stage
-    // ==============================================================================
-    // ==============================================================================
-    
     wire [8:0] B_PC_ID;
     
     IF_ID_reg IF_ID (
@@ -178,6 +174,9 @@ localparam ADDR_WIDTH = 9;
         .instr_out(instr_ID),
         .pc_out   (B_PC_ID)
     );
+    // ==============================================================================
+    // ==============================================================================
+    
 
     // ---------------- TAG ----------------
     // Sign extend a 30 bits:
@@ -294,13 +293,6 @@ localparam ADDR_WIDTH = 9;
     
     // ==============================================================================
     // ==============================================================================
-    // Execution stage
-    // ==============================================================================
-    // ==============================================================================
-    
-    wire [3:0] Condition_Codes;
-    wire [31:0] SOH_out;
-    wire Ci_EX = 1'b0; // For now, no carry-in from PSR; tie to 0. Later you can replace this with the C flag from PSR/WB.
     wire [31:0] A_EX, B_EX, D_EX;
 
     ID_EX_reg ID_EX (
@@ -323,12 +315,18 @@ localparam ADDR_WIDTH = 9;
         .B_EX       (B_EX),
         .D_EX       (D_EX)
     );
+    // ==============================================================================
+    // ==============================================================================
+    
 
     // Ahora puedes “cherry pick” los campos desde instr_EX
     wire [4:0] RD_EX = instr_EX[29:25]; // rd
     wire [4:0] RS1_EX = instr_EX[18:14];
     wire [4:0] RS2_EX = instr_EX[4:0];
     wire       i_EX   = instr_EX[13];
+
+    // ---------------- SOH ----------------
+    wire [31:0] SOH_out;
 
     SOH soh0 (
         .R   (B_EX),          // register operand
@@ -337,7 +335,9 @@ localparam ADDR_WIDTH = 9;
         .N   (SOH_out)         // output second operand when using immediates
     );
 
+    // ---------------- ALU ----------------
     wire [31:0] ALU_Out_EX;
+    wire Ci_EX = 1'b0; // For now, no carry-in from PSR; tie to 0. Later you can replace this with the C flag from PSR/WB.
 
     ALU alu0 (
         .Out (ALU_Out_EX),
@@ -351,8 +351,9 @@ localparam ADDR_WIDTH = 9;
         .OP  (EX_ctrl[16:13])  // ALU_OP
     );
 
+    // ---------------- MUX at ALU's output ----------------
     wire [31:0] mux_out;
-
+    wire [8:0] B_PC_EX;   // PC value pipelined from ID to EX
     wire [31:0] B_PC_EX_ext = {23'b0, B_PC_EX};
 
     TwoToOneMux #(.WIDTH(32)) ALU_out_mux (
@@ -362,6 +363,7 @@ localparam ADDR_WIDTH = 9;
         .out (mux_out)
     );
 
+    // ---------------- MUX that sends R15 address when CALL=1 ----------------
     wire [4:0] RD_EX_muxed;  // this will be the output of the mux
 
     TwoToOneMux #(.WIDTH(5)) CALL_RD_MUX (
@@ -373,20 +375,11 @@ localparam ADDR_WIDTH = 9;
 
     // ==============================================================================
     // ==============================================================================
-    // MEM stage
-    // ==============================================================================
-    // ==============================================================================
-
     // wires para la etapa MEM
     wire [31:0] D_MEM_out;
     wire [4:0]  RD_MEM_out;
-
     // Ahora ALU_MEM_out vendrá del EX/MEM_reg
     wire [31:0] ALU_MEM_out;
-
-    wire [4:0] instr_RD_EX = instr_EX[29:25];
-    
-    wire [8:0] B_PC_EX;   // PC value pipelined from ID to EX
 
     // EX/MEM
     EX_MEM_reg EX_MEM (
@@ -400,13 +393,15 @@ localparam ADDR_WIDTH = 9;
         // datos
         .ex_third_op_in (D_EX),        // dato del 3er operando (para stores)
         .ex_alu_out_in  (mux_out),     // resultado del ALU en EX
-        .ex_rd_in       (RD_EX),       // número de registro destino
+        .ex_rd_in       (RD_EX_muxed),       // número de registro destino
 
         // salidas hacia MEM
         .mem_third_op_out (D_MEM_out),
         .mem_alu_out      (ALU_MEM_out),
         .mem_rd_out       (RD_MEM_out)
     );
+    // ==============================================================================
+    // ==============================================================================
 
     data_memory data_mem0 (
         .DI   (D_MEM_out),          // o directamente D_MEM_out
@@ -429,10 +424,6 @@ localparam ADDR_WIDTH = 9;
 
     // ==============================================================================
     // ==============================================================================
-    // Write Back Stage
-    // ==============================================================================
-    // ==============================================================================
-
     // Write-back stage wires
     wire [31:0] PW_WB;    // data to write to RF
     wire [4:0]  RD_WB;    // destination register in WB
@@ -449,6 +440,39 @@ localparam ADDR_WIDTH = 9;
 
         .rd_in       (RD_MEM_out),   // this should come from RD_EX_muxed pipelined through EX/MEM
         .rd_out      (RD_WB)
+    );
+    // ==============================================================================
+    // ==============================================================================
+
+
+    // ==============================================================================
+    // ==============================================================================
+    // DHDU MODULE:
+    // ==============================================================================
+    // ==============================================================================
+
+    DHDU dhdu0 (
+        .A_S      (A_S_ID),
+        .D_S      (D_S_ID),
+        .EX_L     (EX_L_ID),
+        .B_S      (B_S_ID),
+        .SR       (SR_ID),
+        .NOP      (NOP_ID),
+        .LE       (RF_LE_ID),
+
+        // fuentes en ID
+        .RA       (RA_rf),       // rs1 de instr_ID
+        .RB       (RB_rf),       // rs2 de instr_ID (cuando I=0)
+        .RD       (RD_rf),       // rd de instr_ID (3er operando p.ej. en stores)
+
+        // destinos reales en cada etapa
+        .EX_RD    (RD_EX_muxed), // rd en EX (incluye CALL -> r15)
+        .MEM_RD   (RD_MEM_out),  // rd en MEM (desde EX/MEM_reg)
+        .WB_RD    (RD_WB),       // rd en WB (desde MEM/WB_reg)
+
+        .EX_RF_LE (EX_RF_LE),
+        .MEM_RF_LE(MEM_RF_LE),
+        .WB_RF_LE (WB_RF_LE)
     );
 
 endmodule

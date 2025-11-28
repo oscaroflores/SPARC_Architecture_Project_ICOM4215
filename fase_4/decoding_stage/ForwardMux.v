@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 // =======================================
 // Generic 4-to-1 forwarding mux
 //  - WIDTH can be 32 (normal data) or 9 (TAG-style paths)

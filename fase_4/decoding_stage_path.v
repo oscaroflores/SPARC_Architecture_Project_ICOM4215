@@ -7,7 +7,7 @@ module decoding_stage_path #(
 )(
     input  wire                     clk,
     input  wire                     reset,
-    input  wire [31:0]              B_PC_ID,        // desde IF/ID
+    input  wire [8:0]              B_PC_ID,        // desde IF/ID
     input  wire [31:0]              instr_ID,       // desde IF/ID
 
     // Forwarding / valores de etapas posteriores (necesarios para los muxes)
@@ -16,7 +16,7 @@ module decoding_stage_path #(
     input  wire [31:0]              PW_WB,          // writeback data from WB stage
     input  wire [4:0]               RW_WB,          // writeback destination reg from WB stage
     input  wire                     RF_LE_WB,       // register file write enable (WB stage)
-
+    input wire [31:0]               id_ctrl_in,    // señales de control desde CU
     // Señales para CCR (vienen normalmente del EX stage / control)
     input  wire                     CC_EN,          // habilita carga del CCR (desde EX / control)
     input  wire [3:0]               ICC_in,         // datos a cargar en CCR (desde EX stage)
@@ -26,13 +26,14 @@ module decoding_stage_path #(
     output wire [31:0]              B_src,
     output wire [31:0]              D_src,
     output wire [31:0]              B_PC_EX,
-    output wire [31:0]              I_SOH_EX,
+    output wire [31:0]              I,
     output wire [4:0]               RW_EX,
     output wire [ADDR_WIDTH-1:0]    TA,
-    output wire [1:0]               SR,
-    output wire                     J,
-    output wire                     carry_out,
-    output wire                     call
+    output wire [1:0]               SR,     // Va para el DHDU
+    output wire                     J,      // Va para la etapa de fetch
+    output wire                     carry_out, // Va para el alu en EX stage
+    output wire                     call,       // Va para la etapa de fetch
+    output wire [31:0]              id_ctrl_out
 );
 
     // ------------------------------------------------------------
@@ -172,6 +173,7 @@ module decoding_stage_path #(
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
     assign B_PC_EX  = B_PC_ID;
-    assign I_SOH_EX = instr_ID;
+    assign I = instr_ID;
+    assign id_ctrl_out = id_ctrl_in;
 
 endmodule

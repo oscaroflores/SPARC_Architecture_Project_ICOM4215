@@ -18,9 +18,9 @@ module fetch_path #(
     input  wire npc_LE,
 
     // Señales de control
-    input  wire jmpl,   // control de instrucción JMPL
+    input  wire call,   // control de instrucción JMPL
     input  wire J,      // condición de branch tomada (condition handler)
-
+    input  wire jmpl,   // control de instrucción JMPL
     // Entradas desde otras etapas
     // TA y ALU_out vendrán luego del TA generator y del EX stage
     input  wire [ADDR_WIDTH-1:0] TA,       // Target Address (branch/call)
@@ -51,7 +51,7 @@ module fetch_path #(
     wire [ADDR_WIDTH-1:0] ALUout_plus4;
 
     // Salida del OR (jumpl OR J)
-    wire branch_or_jmpl;
+    wire branch_or_call;
 
     // Salidas de los muxes
     wire [ADDR_WIDTH-1:0] mux_TA_nPC_plus4_out; // escoge entre nPC+4 y TA+4
@@ -63,11 +63,11 @@ module fetch_path #(
     //  Lógica combinacional
     // ======================
 
-    // OR gate: jumpl OR J
-    or2 u_or_branch_jmpl (
-        .a(jmpl),
+    // OR gate: call OR J
+    or2 u_or_branch_call (
+        .a(call),
         .b(J),
-        .y(branch_or_jmpl)
+        .y(branch_or_call)
     );
 
     // ALU: TA + 4
@@ -93,7 +93,7 @@ module fetch_path #(
     mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
         .d0(nPC_plus4),       // camino normal: nPC + 4
         .d1(TA_plus4),        // camino de salto: TA + 4
-        .sel(branch_or_jmpl),
+        .sel(branch_or_call),
         .y(mux_TA_nPC_plus4_out)
     );
 
@@ -101,7 +101,7 @@ module fetch_path #(
     mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC (
         .d0(nPC_reg),         // camino normal: PC <- nPC
         .d1(TA),              // camino de salto: PC <- TA
-        .sel(branch_or_jmpl),
+        .sel(branch_or_call),
         .y(mux_TA_nPC_out)
     );
 
@@ -111,7 +111,7 @@ module fetch_path #(
     // Entradas: (TA+4 / nPC+4) vs (ALU_out + 4)
     mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_nPC_next (
         .d0(mux_TA_nPC_plus4_out), // normal / branch
-        .d1(ALUout_plus4),         // JMPL
+        .d1(ALUout_plus4),
         .sel(jmpl),
         .y(mux_nPC_next_src)
     );

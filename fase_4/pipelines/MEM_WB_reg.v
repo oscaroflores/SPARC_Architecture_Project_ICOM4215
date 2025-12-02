@@ -17,7 +17,7 @@ module MEM_WB_reg (
     output reg [4:0]  rd_out
 );
 
-    always @(posedge clk or posedge reset) begin
+    always @(posedge clk) begin
         if (reset) begin
             wb_ctrl_out  <= 32'b0;
             pw_data_out  <= 32'b0;

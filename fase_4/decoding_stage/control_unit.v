@@ -38,7 +38,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 1'b0;
+        ID_SR = 1'b0;    //no lo estamos cambiando en ningun lado
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -137,7 +137,7 @@ module control_unit(
                 end
 
 
-                // OP = 11: Load y store
+                // OP = 11: Load y store    //maybe se puede crear un problema con el OP3 (OP=11)
                 2'b11: begin
                     case (op[1:0]) 
                         2'b01: begin

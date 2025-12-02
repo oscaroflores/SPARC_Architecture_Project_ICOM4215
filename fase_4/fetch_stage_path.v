@@ -71,26 +71,26 @@ module fetch_path #(
     );
 
     // ALU: TA + 4
-    alu_add4 #(.WIDTH(ADDR_WIDTH)) u_add4_TA (
+    add4 #(.WIDTH(ADDR_WIDTH)) u_add4_TA (
         .A(TA),
         .R(TA_plus4)
     );
 
     // ALU: nPC + 4
-    alu_add4 #(.WIDTH(ADDR_WIDTH)) u_add4_nPC (
+    add4 #(.WIDTH(ADDR_WIDTH)) u_add4_nPC (
         .A(nPC_reg),
         .R(nPC_plus4)
     );
 
     // ALU: ALU_out + 4 (para JMPL)
-    alu_add4 #(.WIDTH(ADDR_WIDTH)) u_add4_ALUout (
+    add4 #(.WIDTH(ADDR_WIDTH)) u_add4_ALUout (
         .A(ALU_out),
         .R(ALUout_plus4)
     );
 
     // Primer par de muxes (controlados por OR(jmpl, J))
     // Mux 1: escoge entre nPC+4 (secuencial) y TA+4 (brinco)
-    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
         .d0(nPC_plus4),       // camino normal: nPC + 4
         .d1(TA_plus4),        // camino de salto: TA + 4
         .sel(branch_or_call),
@@ -98,7 +98,7 @@ module fetch_path #(
     );
 
     // Mux 2: escoge entre nPC y TA para el PC
-    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC (
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC (
         .d0(nPC_reg),         // camino normal: PC <- nPC
         .d1(TA),              // camino de salto: PC <- TA
         .sel(branch_or_call),
@@ -109,7 +109,7 @@ module fetch_path #(
 
     // Mux 3: entrada final del registro nPC
     // Entradas: (TA+4 / nPC+4) vs (ALU_out + 4)
-    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_nPC_next (
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_nPC_next (
         .d0(mux_TA_nPC_plus4_out), // normal / branch
         .d1(ALUout_plus4),
         .sel(jmpl),
@@ -118,7 +118,7 @@ module fetch_path #(
 
     // Mux 4: entrada final del registro PC
     // Entradas: (TA / nPC) vs ALU_out directo
-    mux2 #(.WIDTH(ADDR_WIDTH)) u_mux_PC_next (
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_PC_next (
         .d0(mux_TA_nPC_out),   // normal / branch
         .d1(ALU_out),          // JMPL
         .sel(jmpl),
@@ -144,7 +144,7 @@ module fetch_path #(
     //  Instruction Memory
     // ======================
     // OJO: usa el nombre real de tu módulo de memoria de instrucciones
-    Instruction_Memory u_imem (
+    instruction_memory u_imem (
         .A(PC_reg),     // dirección = PC de 9 bits
         .I(instr_F)     // instrucción de 32 bits hacia IF/ID
     );

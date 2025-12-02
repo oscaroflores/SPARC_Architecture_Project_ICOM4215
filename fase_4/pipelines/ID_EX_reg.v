@@ -37,6 +37,7 @@ module ID_EX_reg (
             A_EX        <= 32'b0;
             B_EX        <= 32'b0;
             D_EX        <= 32'b0;
+            rd_EX       <= 5'b0;
         end else begin
             ex_ctrl_out <= id_ctrl_in;
             instr_EX    <= instr_ID;

@@ -24,7 +24,7 @@ module control_unit(
     reg       JMPL;
     reg       B;
     reg       CC;
-    reg       ID_SR;
+    reg [2:0]  ID_SR;
 
     always @(*) begin
         ALU_OP = 4'b0000;
@@ -38,7 +38,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 1'b0;    //no lo estamos cambiando en ningun lado
+        ID_SR = 3'b0;    //no lo estamos cambiando en ningun lado
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -52,7 +52,7 @@ module control_unit(
             JMPL = 1'b0;
             B = 1'b0;
             CC = 1'b0;
-            ID_SR = 1'b0;
+            ID_SR = 3'b0;
         end else begin
             case (op)
                 
@@ -176,7 +176,7 @@ module control_unit(
 
         // Unimos todas las señales en el bus control_signals
         control_signals = 32'b0;
-        control_signals[18]    = ID_SR;
+        control_signals[20:18]    = ID_SR;
         control_signals[17]    = CC;
         control_signals[16:13] = ALU_OP;
         control_signals[12:9]  = SOH_OP;

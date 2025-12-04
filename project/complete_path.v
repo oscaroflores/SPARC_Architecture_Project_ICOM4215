@@ -272,7 +272,7 @@ module sparc_top (
     DHDU DHDU (
         // Inputs
         .EX_L(ex_ctrl_out[4]),  // EX load signal
-        .SR(id_ctrl_out[18]),     // write enable from ID stage
+        .SR(id_ctrl_out[20:18]),     // write enable from ID stage
         .RA(instr_ID[18:14]),
         .RB(instr_ID[4:0]),
         .RD(instr_ID[29:25]),

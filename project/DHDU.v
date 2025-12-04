@@ -8,7 +8,7 @@ module DHDU (
     // Registros fuente de ID
     input  [4:0] RA,
     input  [4:0] RB,
-
+    input  [4:0] RD,
     // Destinos
     input  [4:0] EX_RD,
     input  [4:0] MEM_RD,
@@ -20,9 +20,9 @@ module DHDU (
     input        WB_RF_LE,
 
     // Outputs
-    output reg  [3:0] A_S,
-    output reg  [3:0] B_S,
-    output reg  [3:0] D_S,
+    output reg  [1:0] A_S,
+    output reg  [1:0] B_S,
+    output reg  [1:0] D_S,
     output reg        NOP,
     output reg        LE
 );

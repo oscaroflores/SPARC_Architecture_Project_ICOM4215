@@ -12,6 +12,7 @@ module fetch_stage_path #(
 )(
     input  wire clk,
     input  wire reset,
+    input  wire LE_DHDU, // VERIFICAR: señal de enable desde DHDU
 
     // Enables para poder hacer stalls más adelante
     input  wire pc_LE,
@@ -91,18 +92,18 @@ module fetch_stage_path #(
     // Primer par de muxes (controlados por OR(jmpl, J))
     // Mux 1: escoge entre nPC+4 (secuencial) y TA+4 (brinco)
     TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
-        .d0(nPC_plus4),       // camino normal: nPC + 4
-        .d1(TA_plus4),        // camino de salto: TA + 4
+        .in0(nPC_plus4),       // camino normal: nPC + 4
+        .in1(TA_plus4),        // camino de salto: TA + 4
         .sel(branch_or_call),
-        .y(mux_TA_nPC_plus4_out)
+        .out(mux_TA_nPC_plus4_out)
     );
 
     // Mux 2: escoge entre nPC y TA para el PC
     TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC (
-        .d0(nPC_reg),         // camino normal: PC <- nPC
-        .d1(TA),              // camino de salto: PC <- TA
+        .in0(nPC_reg),         // camino normal: PC <- nPC
+        .in1(TA),              // camino de salto: PC <- TA
         .sel(branch_or_call),
-        .y(mux_TA_nPC_out)
+        .out(mux_TA_nPC_out)
     );
 
     // Segundo par de muxes (controlados directamente por jumpl)
@@ -110,19 +111,19 @@ module fetch_stage_path #(
     // Mux 3: entrada final del registro nPC
     // Entradas: (TA+4 / nPC+4) vs (ALU_out + 4)
     TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_nPC_next (
-        .d0(mux_TA_nPC_plus4_out), // normal / branch
-        .d1(ALUout_plus4),
+        .in0(mux_TA_nPC_plus4_out), // normal / branch
+        .in1(ALUout_plus4),
         .sel(jmpl),
-        .y(mux_nPC_next_src)
+        .out(mux_nPC_next_src)
     );
 
     // Mux 4: entrada final del registro PC
     // Entradas: (TA / nPC) vs ALU_out directo
     TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_PC_next (
-        .d0(mux_TA_nPC_out),   // normal / branch
-        .d1(ALU_out),          // JMPL
+        .in0(mux_TA_nPC_out),   // normal / branch
+        .in1(ALU_out),          // JMPL
         .sel(jmpl),
-        .y(mux_PC_next_src)
+        .out(mux_PC_next_src)
     );
 
     // ======================

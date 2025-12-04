@@ -26,10 +26,10 @@ module decoding_stage_path #(
     input  wire [1:0]               B_S,
     input  wire [1:0]               D_S,
     // Salidas hacia la etapa EX (operandos y señales)
-    output wire [31:0]              A_src,
-    output wire [31:0]              B_src,
-    output wire [31:0]              D_src,
-    output wire [31:0]              instr_EX,
+    output wire [31:0]              A_ID,
+    output wire [31:0]              B_ID,
+    output wire [31:0]              D_ID,
+    output wire [31:0]              instr_ID_EX,
     output wire [ADDR_WIDTH-1:0]    TA,
     output wire                     J,            // Va para la etapa de fetch
     output wire                     carry_out,    // Va para el alu en EX stage
@@ -102,7 +102,7 @@ module decoding_stage_path #(
     );
 
     // ------------------------------------------------------------
-    // Forwarding Muxes -> salida A_src, B_src, D_src
+    // Forwarding Muxes -> salida A_ID, B_ID, D_ID
     // ------------------------------------------------------------
     FourToOneMux #(.WIDTH(32)) mux_A (
         .in0 (PA_rf),
@@ -110,7 +110,7 @@ module decoding_stage_path #(
         .in2 (data_mem_mux),
         .in3 (PW_WB),
         .sel (sel_A),
-        .out (A_src)
+        .out (A_ID)
     );
 
     FourToOneMux #(.WIDTH(32)) mux_B (
@@ -119,7 +119,7 @@ module decoding_stage_path #(
         .in2 (data_mem_mux),
         .in3 (PW_WB),
         .sel (sel_B),
-        .out (B_src)
+        .out (B_ID)
     );
 
     FourToOneMux #(.WIDTH(32)) mux_D (
@@ -128,7 +128,7 @@ module decoding_stage_path #(
         .in2 (data_mem_mux),
         .in3 (PW_WB),
         .sel (sel_D),
-        .out (D_src)
+        .out (D_ID)
     );
 
     // ------------------------------------------------------------
@@ -193,6 +193,6 @@ module decoding_stage_path #(
     // ------------------------------------------------------------
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
-    assign instr_EX = instr_ID;
+    assign instr_ID_EX = instr_ID;
 
 endmodule

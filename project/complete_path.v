@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module sparc_top (
     input wire clk,
     input wire reset,
@@ -10,10 +12,13 @@ module sparc_top (
     output [31:0] instr_ID,
     output [8:0]  B_PC_ID,
 
+    output [31:0] A_ID,
+    output [31:0] B_ID,
+    output [31:0] D_ID,
     output [31:0] A_EX,
     output [31:0] B_EX,
     output [31:0] D_EX,
-    output [31:0] instr_EX,
+    output [31:0] instr_ID_EX,
     output [31:0] id_ctrl_out,
     output [8:0]  TA,
 
@@ -33,6 +38,11 @@ module sparc_top (
 
     output [31:0] wb_ctrl_out
 );
+    // ======================================================
+    //  Parámetros generales
+    // ======================================================
+    localparam ADDR_WIDTH = 9;
+    localparam INST_WIDTH = 32;
 
     // ======================================================
     //  Señales internas entre FETCH → IF/ID
@@ -43,7 +53,7 @@ module sparc_top (
     // ======================================================
     //  Señales IF/ID → DECODING
     // ======================================================
-    // instr_ID y B_PC_ID ya son puertos de salida
+    wire [31:0] instr_IF_ID;
 
     // ======================================================
     //  DECODING → ID/EX
@@ -51,12 +61,11 @@ module sparc_top (
     // A_EX, B_EX, D_EX, instr_EX, id_ctrl_out, TA ya son puertos
     wire        J;
     wire        carry_flag;
-    // 'call' no se usa en este top, así que lo omito
 
     // ======================================================
     //  ID/EX → EXECUTE
     // ======================================================
-    // ex_ctrl_out, D_MEM_tmp, ALU_out_EX, RD_EX_out, CC_EX ya son puertos
+    wire [31:0] instr_ID_EX;
 
     // ======================================================
     //  EXECUTE → EX/MEM → MEMORY
@@ -84,7 +93,10 @@ module sparc_top (
     // ======================================================
     //  ETAPA FETCH
     // ======================================================
-    fetch_stage_path FETCH (
+    fetch_stage_path #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .INST_WIDTH(INST_WIDTH)
+    ) FETCH (
         .clk(clk),
         .reset(reset),
         .pc_LE(LE_DHDU),
@@ -112,7 +124,7 @@ module sparc_top (
         .instr_in(instr_F),
         .pc_in(B_PC_F),
         .LE(LE_DHDU),
-        .instr_out(instr_ID),
+        .instr_out(instr_IF_ID),
         .pc_out(B_PC_ID)
     );
 
@@ -120,14 +132,12 @@ module sparc_top (
     // ETAPA DECODING
     // ======================================================
     decoding_stage_path #(
-        .ADDR_WIDTH(9),
-        .RESET_PC(9'd0),
-        .RESET_nPC(9'd4)
+        .ADDR_WIDTH(ADDR_WIDTH)
     ) ID (
         .clk(clk),
         .reset(reset),
         .B_PC_ID(B_PC_ID),
-        .instr_ID(instr_ID),
+        .instr_ID(instr_IF_ID),
 
         // Forwarding inputs
         .ALU_Out_EX(ALU_out_EX),
@@ -152,10 +162,10 @@ module sparc_top (
         .D_S(D_S),
 
         // Outputs
-        .A_src(A_EX),
-        .B_src(B_EX),
-        .D_src(D_EX),
-        .instr_EX(instr_EX),
+        .A_ID(A_ID),
+        .B_ID(B_ID),
+        .D_ID(D_ID),
+        .instr_ID_EX(instr_ID),
         .TA(TA),
         .J(J),
         .carry_out(carry_flag),
@@ -169,12 +179,12 @@ module sparc_top (
         .clk(clk),
         .reset(reset),
         .instr_ID(instr_ID),
-        .A_ID(A_EX),
-        .B_ID(B_EX),
-        .D_ID(D_EX),
+        .A_ID(A_ID),
+        .B_ID(B_ID),
+        .D_ID(D_ID),
         .id_ctrl_in(id_ctrl_out),
 
-        .instr_EX(instr_EX),
+        .instr_ID_EX(instr_ID_EX),
         .A_EX(A_EX),
         .B_EX(B_EX),
         .D_EX(D_EX),
@@ -187,10 +197,11 @@ module sparc_top (
     execution_stage_path EX (
         .A_EX(A_EX),
         .B_EX(B_EX),
-        .instr_EX(instr_EX),
-        .ex_ctrl_in(ex_ctrl_out),
         .D_EX(D_EX),
+        .instr_ID_EX(instr_ID_EX),
+        .ex_ctrl_in(ex_ctrl_out),
         .C_flag(carry_flag),
+        .B_PC_ID(B_PC_ID),
 
         .ALU_mux_out(ALU_out_EX),
         .RD_EX_out(RD_EX_out),

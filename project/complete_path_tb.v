@@ -64,13 +64,13 @@ module sparc_tb_all();
         // Set monitor for phase1. $monitor will replace previous monitor when called again.
         $monitor("%0t\t%d\t%d\t%d\t%d\t%d\t%d",
             $time,
-            DUT.PC_fetch,                      // PC (from fetch_path outputs)
-            DUT.ID.REG_FILE.regs[5],           // r5
-            DUT.ID.REG_FILE.regs[6],           // r6
-            DUT.ID.REG_FILE.regs[16],          // r16
-            DUT.ID.REG_FILE.regs[17],          // r17
-            DUT.ID.REG_FILE.regs[18]           // r18
-        );
+            DUT.PC_fetch,
+            DUT.ID.REG_FILE.r5,
+            DUT.ID.REG_FILE.r6,
+            DUT.ID.REG_FILE.r16,
+            DUT.ID.REG_FILE.r17,
+            DUT.ID.REG_FILE.r18
+);
 
         // At t=76 print word in location 56 (bytes 56..59) in binary
         #76; // Wait until time 76
@@ -110,13 +110,14 @@ module sparc_tb_all();
         $display("time\tPC\tmem_addr\tr1\tr2\tr3\tr5");
         $monitor("%0t\t%d\t%d\t%d\t%d\t%d\t%d",
             $time,
-            DUT.PC_fetch,                      // PC
-            DUT.MEM.alu_result_in,             // address to data memory (value placed on alu_result_in)
-            DUT.ID.REG_FILE.regs[1],           // r1
-            DUT.ID.REG_FILE.regs[2],           // r2
-            DUT.ID.REG_FILE.regs[3],           // r3
-            DUT.ID.REG_FILE.regs[5]            // r5
-        );
+            DUT.PC_fetch,
+            DUT.MEM.alu_result_in,
+            DUT.ID.REG_FILE.r1,
+            DUT.ID.REG_FILE.r2,
+            DUT.ID.REG_FILE.r3,
+            DUT.ID.REG_FILE.r5
+);
+
 
         // Wait until absolute time 160
         #(160 - $time);
@@ -156,19 +157,19 @@ module sparc_tb_all();
         $display("time\tPC\tmem_addr\tr1\tr2\tr3\tr4\tr5\tr8\tr10\tr11\tr12\tr15");
         $monitor("%0t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
             $time,
-            DUT.PC_fetch,                      // PC
-            DUT.MEM.alu_result_in,             // address to data memory
-            DUT.ID.REG_FILE.regs[1],           // r1
-            DUT.ID.REG_FILE.regs[2],           // r2
-            DUT.ID.REG_FILE.regs[3],           // r3
-            DUT.ID.REG_FILE.regs[4],           // r4
-            DUT.ID.REG_FILE.regs[5],           // r5
-            DUT.ID.REG_FILE.regs[8],           // r8
-            DUT.ID.REG_FILE.regs[10],          // r10
-            DUT.ID.REG_FILE.regs[11],          // r11
-            DUT.ID.REG_FILE.regs[12],          // r12
-            DUT.ID.REG_FILE.regs[15]           // r15
-        );
+            DUT.PC_fetch,
+            DUT.MEM.alu_result_in,
+            DUT.ID.REG_FILE.r1,
+            DUT.ID.REG_FILE.r2,
+            DUT.ID.REG_FILE.r3,
+            DUT.ID.REG_FILE.r4,
+            DUT.ID.REG_FILE.r5,
+            DUT.ID.REG_FILE.r8,
+            DUT.ID.REG_FILE.r10,
+            DUT.ID.REG_FILE.r11,
+            DUT.ID.REG_FILE.r12,
+            DUT.ID.REG_FILE.r15
+);
 
         // Wait until absolute time 240
         #(240 - $time);

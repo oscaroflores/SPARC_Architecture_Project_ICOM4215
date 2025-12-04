@@ -13,6 +13,6 @@ module instruction_memory (
     end
 
     initial begin
-        $readmemb("precharge.txt", Memory);
+        $readmemb("debugging_code_SPARC.txt", Memory);
     end
 endmodule

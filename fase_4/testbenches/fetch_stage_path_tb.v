@@ -89,7 +89,8 @@ module fetch_path_tb;
     initial begin
         $display(" time | PC  nPC  B_PC | instruction");
         $display("-----------------------------------------------");
-        $monitor("%8b %8b %8b %8b", instr_F[31:24], instr_F[23:16], instr_F[15:8], instr_F[7:0]);
+        $monitor("%4t | %3d %3d %3d | %8b %8b %8b %8b",
+                 $time, PC_out, nPC_out, B_PC, instr_F[31:24], instr_F[23:16], instr_F[15:8], instr_F[7:0]);
     end
 
 endmodule

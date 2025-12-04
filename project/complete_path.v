@@ -2,9 +2,9 @@ module sparc_top (
     input wire clk,
     input wire reset,
 
-    //outputs
-    output [8:0] PC_fetch,
-    output [8:0] nPC_fetch,
+    // outputs visibles para el testbench
+    output [8:0]  PC_fetch,
+    output [8:0]  nPC_fetch,
     output [31:0] instr_F,
 
     output [31:0] instr_ID,
@@ -37,37 +37,26 @@ module sparc_top (
     // ======================================================
     //  Señales internas entre FETCH → IF/ID
     // ======================================================
-    wire [31:0] instr_F;
+    // instr_F, PC_fetch, nPC_fetch ya son puertos de salida (wire implícito)
     wire [8:0]  B_PC_F;
-    wire [8:0]  PC_fetch, nPC_fetch;
-
-    // Señales de control del fetch
-    wire pc_LE = 1'b1;
-    wire npc_LE = 1'b1;
 
     // ======================================================
     //  Señales IF/ID → DECODING
     // ======================================================
-    wire [31:0] instr_ID;
-    wire [8:0]  B_PC_ID;
+    // instr_ID y B_PC_ID ya son puertos de salida
 
     // ======================================================
     //  DECODING → ID/EX
     // ======================================================
-    wire [31:0] A_EX, B_EX, D_EX;
-    wire [31:0] instr_EX;
-    wire [31:0] id_ctrl_out;
-    wire [8:0]  TA;
-    wire J, call;
+    // A_EX, B_EX, D_EX, instr_EX, id_ctrl_out, TA ya son puertos
+    wire        J;
+    wire        carry_flag;
+    // 'call' no se usa en este top, así que lo omito
 
     // ======================================================
     //  ID/EX → EXECUTE
     // ======================================================
-    wire [31:0] ex_ctrl_out;
-    wire [31:0] D_MEM_tmp;
-    wire [31:0] ALU_out_EX;
-    wire [4:0]  RD_EX_out;
-    wire [3:0]  CC_EX;
+    // ex_ctrl_out, D_MEM_tmp, ALU_out_EX, RD_EX_out, CC_EX ya son puertos
 
     // ======================================================
     //  EXECUTE → EX/MEM → MEMORY
@@ -77,17 +66,20 @@ module sparc_top (
     wire [4:0]  rd_in;
     wire [31:0] DI;
 
-    wire [31:0] mem_ctrl_out;
-    wire [31:0] data_mux_out;
-    wire [4:0]  rd_mem;
-
     // ======================================================
     //  MEM/WB → WRITEBACK
     // ======================================================
-    wire [31:0] PW_WB;
-    wire [4:0]  RW_WB;
-    wire        RF_LE_WB;
-    wire [31:0] wb_ctrl_out;
+    // PW_WB, RW_WB, RF_LE_WB y wb_ctrl_out ya son puertos
+    assign RF_LE_WB = wb_ctrl_out[3];
+
+    // ======================================================
+    //  Señales para DHDU
+    // ======================================================
+    wire [1:0] A_S;
+    wire [1:0] B_S;
+    wire [1:0] D_S;
+    wire       NOP;
+    wire       LE_DHDU;
 
     // ======================================================
     //  ETAPA FETCH
@@ -95,9 +87,9 @@ module sparc_top (
     fetch_stage_path FETCH (
         .clk(clk),
         .reset(reset),
-        .pc_LE(pc_LE),
-        .npc_LE(npc_LE),
-        .call(ex_ctrl_in[2]),
+        .pc_LE(LE_DHDU),
+        .npc_LE(LE_DHDU),
+        .call(ex_ctrl_out[2]),
         .jmpl(ex_ctrl_out[1]),
         .LE_DHDU(LE_DHDU),
         .J(J),
@@ -112,15 +104,6 @@ module sparc_top (
     );
 
     // ======================================================
-    //  DHDU: Data Hazard Detection Unit
-    // ======================================================
-    wire [1:0] A_S;
-    wire [1:0] B_S;
-    wire [1:0] D_S;
-    wire       NOP;
-    wire       LE_DHDU;
-
-    // ======================================================
     //  REGISTRO IF/ID
     // ======================================================
     IF_ID_reg IF_ID0 (
@@ -128,7 +111,7 @@ module sparc_top (
         .reset(reset),
         .instr_in(instr_F),
         .pc_in(B_PC_F),
-        .LE(LE), // Verificar señal
+        .LE(LE_DHDU),
         .instr_out(instr_ID),
         .pc_out(B_PC_ID)
     );
@@ -141,7 +124,6 @@ module sparc_top (
         .RESET_PC(9'd0),
         .RESET_nPC(9'd4)
     ) ID (
-        // Inputs
         .clk(clk),
         .reset(reset),
         .B_PC_ID(B_PC_ID),
@@ -180,14 +162,13 @@ module sparc_top (
         .id_ctrl_out(id_ctrl_out)
     );
 
-
     // ======================================================
     // REGISTRO ID/EX
     // ======================================================
     ID_EX_reg ID_EX0 (
         .clk(clk),
         .reset(reset),
-        .instr_ID(instr_EX),
+        .instr_ID(instr_ID),
         .A_ID(A_EX),
         .B_ID(B_EX),
         .D_ID(D_EX),
@@ -270,20 +251,18 @@ module sparc_top (
     // DHDU: Data Hazard Detection Unit
     // ======================================================
     DHDU DHDU (
-        // Inputs
-        .EX_L(ex_ctrl_out[4]),  // EX load signal
-        .SR(id_ctrl_out[20:18]),     // write enable from ID stage
+        .EX_L(ex_ctrl_out[4]),
+        .SR(id_ctrl_out[20:18]),
         .RA(instr_ID[18:14]),
         .RB(instr_ID[4:0]),
         .RD(instr_ID[29:25]),
         .EX_RD(RD_EX_out),
         .MEM_RD(rd_mem),
-        .WB_RD(ALU_out_EX[4:0]), // VERIFICAR Que bits del alu out van al RD
+        .WB_RD(RW_WB),
         .EX_RF_LE(ex_ctrl_out[3]),
         .MEM_RF_LE(mem_ctrl_out[3]),
         .WB_RF_LE(wb_ctrl_out[3]),
 
-        // Outputs
         .A_S(A_S),
         .B_S(B_S),
         .D_S(D_S),

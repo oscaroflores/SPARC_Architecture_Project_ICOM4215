@@ -73,7 +73,7 @@ Entonces, comenzando con OP igual a 0000 deben ir incrementando OP cada dos unid
 que OP sea 1111. Con una instrucción de monitor deben imprimir en una línea el valor de OP en binario, los
 números A y B (en decimal y binario), el output Out (en decimal y binario) y los flags (en binario).
 Luego deben cambiar el valor de Ci a 1 y repetir el procedimiento anterior hasta el OP igual a 0011.
-*/
+
 module ALU_tester();
 
     // Entradas
@@ -133,3 +133,5 @@ module ALU_tester();
     end
 
 endmodule
+
+*/

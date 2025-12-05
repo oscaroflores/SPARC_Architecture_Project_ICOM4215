@@ -1,32 +1,37 @@
 `timescale 1ns/1ps
 // TAG: Target Address Generator
-// Calcula TA = B_PC + (Offset << 2)
-// - Soporta branches (disp22 extendido a 30 bits) y CALL (disp30)
+// Computes TA = B_PC + (Offset << 2)
 
 module TAG #(
-    parameter PC_WIDTH     = 9,   // ancho del PC (proyecto: 9 bits)
-    parameter OFFSET_WIDTH = 30   // disp30 / disp22 extendido a 30 bits
+    parameter PC_WIDTH     = 9,
+    parameter OFFSET_WIDTH = 30
 )(
-    input  wire [PC_WIDTH-1:0]     B_PC,    // PC del branch / call
-    input  wire [OFFSET_WIDTH-1:0] Offset,  // disp30 o disp22-extendido
-    output wire [PC_WIDTH-1:0]     TA       // Target Address (PC')
+    input  wire [PC_WIDTH-1:0]     B_PC,
+    input  wire [OFFSET_WIDTH-1:0] Offset,
+    output reg  [PC_WIDTH-1:0]     TA
 );
 
-    // Extender a 32 bits para hacer la suma cómodamente
-    // PC es una dirección -> se extiende con ceros (no es signed)
-    wire [31:0] pc_ext   = { {(32-PC_WIDTH){1'b0}}, B_PC };
+    // Internal expanded wires
+    reg [31:0] pc_ext;
+    reg [31:0] off_ext;
+    reg [31:0] off_shift;
+    reg [31:0] sum;
 
-    // Offset sí es signed -> sign-extend desde su MSB (bit 29)
-    wire [31:0] off_ext  =
-        { {(32-OFFSET_WIDTH){Offset[OFFSET_WIDTH-1]}}, Offset };
+    always @(*) begin
+        // Zero-extend PC (PC is not signed)
+        pc_ext = { {(32-PC_WIDTH){1'b0}}, B_PC };
 
-    // Los disp son en palabras, así que desplazamos 2 bits a la izquierda
-    wire [31:0] off_shift = off_ext << 2;
+        // Sign-extend Offset (signed immediate)
+        off_ext = { {(32-OFFSET_WIDTH){Offset[OFFSET_WIDTH-1]}}, Offset };
 
-    // Suma PC + offset desplazado
-    wire [31:0] sum = pc_ext + off_shift;
+        // Shift left by 2 (word addressing)
+        off_shift = off_ext << 2;
 
-    // Para el proyecto solo usamos los PC_WIDTH bits menos significativos
-    assign TA = sum[PC_WIDTH-1:0];
+        // Add
+        sum = pc_ext + off_shift;
+
+        // Output low PC_WIDTH bits
+        TA = sum[PC_WIDTH-1:0];
+    end
 
 endmodule

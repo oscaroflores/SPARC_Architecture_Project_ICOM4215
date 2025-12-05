@@ -91,13 +91,14 @@ module sparc_tb();
     // =============================================================
     
     always @(posedge clk) begin
-        $display("t=%0t | PC=%0d NPC=%0d  INSTR_ID=%0b INSTR_EX=%0b r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d A_EX=%0d B_EX=%0d D_EX=%0d",
+        $display("t=%0t | PC=%0d NPC=%0d INTR_IF=%0b INSTR_ID=%0b INSTR_EX=%0b r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d A_EX=%0d B_EX=%0d D_EX=%0d CNTRL=%0b",
                  $time,
                  DUT.PC_fetch,
                  DUT.nPC_fetch,
+                 DUT.instr_F,
                  DUT.instr_ID,
                  DUT.instr_ID_EX,
-                 r5, r6, r16, r17, r18, DUT.A_EX, DUT.B_EX, DUT.D_EX);
+                 r5, r6, r16, r17, r18, DUT.A_EX, DUT.B_EX, DUT.D_EX, DUT.id_ctrl_out);
     end
     
 

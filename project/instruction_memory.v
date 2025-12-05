@@ -8,11 +8,11 @@ module instruction_memory (
 );
     reg [7:0] Memory [0:511];
 
+    initial begin
+        $readmemb("debugging_code_SPARC.txt", Memory);
+    end
     always @(*) begin
         I = {Memory[A], Memory[A+1], Memory[A+2], Memory[A+3]};
     end
 
-    initial begin
-        $readmemb("debugging_code_SPARC.txt", Memory);
-    end
 endmodule

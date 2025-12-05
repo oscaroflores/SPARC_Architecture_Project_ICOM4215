@@ -15,13 +15,17 @@ module FourToOneMux #(
     input  [WIDTH-1:0] in2,   // from MEM stage (EX/MEM or MEM result)
     input  [WIDTH-1:0] in3,   // from WB stage (MEM/WB)
     input  [1:0]       sel,   // forwarding select
-    output [WIDTH-1:0] out
+    output reg [WIDTH-1:0] out
 );
 
-    assign out =
-        (sel == 2'b00) ? in0 :
-        (sel == 2'b01) ? in1 :
-        (sel == 2'b10) ? in2 :
-                         in3;   // sel == 2'b11
+    always @* begin
+        case(sel)
+            2'b00: out = in0;
+            2'b01: out = in1;
+            2'b10: out = in2;
+            2'b11: out = in3;
+            default: out = {WIDTH{1'bx}};
+        endcase
+    end
 
 endmodule

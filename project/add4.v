@@ -7,6 +7,12 @@ module add4 #(
     input  wire [WIDTH-1:0] A,    // Entrada
     output wire [WIDTH-1:0] R     // Salida = A + 4
 );
-    assign R = A + 4;
+
+    reg [WIDTH-1:0] R_reg;
+    assign R = R_reg;
+
+    always @* begin
+        R_reg = A + 4;
+    end
 
 endmodule

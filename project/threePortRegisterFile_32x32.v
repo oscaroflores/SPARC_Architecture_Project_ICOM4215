@@ -6,8 +6,13 @@
 `timescale 1ns/1ps
 
 // Modulo del decoder 5x32. 
-module decoder_5to32 (output [31:0] O, input [4:0] D, input E);
-    assign O = E ? (32'b1 << D) : 32'b0;
+module decoder_5to32 (output reg [31:0] O, input [4:0] D, input E);
+    always @* begin
+        if (E)
+            O = (32'b1 << D);
+        else
+            O = 32'b0;
+    end
 endmodule
 
 //Modulo de los registros de 32 bits. Los mismos son "rising edge" utilizando posedge.

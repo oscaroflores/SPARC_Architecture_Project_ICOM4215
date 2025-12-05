@@ -90,7 +90,7 @@ module sparc_tb();
             DUT.ALU_mux_out, DUT.RD_EX_out, DUT.CC_EX,
             DUT.ex_ctrl_out, DUT.D_MEM_out,DUT.L_EX, DUT.RF_LE_EX,
             // EX/MEM
-            
+
             // MEM
             DUT.data_mux_out, DUT.mem_ctrl_out, DUT.rd_mem,
             // WB
@@ -100,6 +100,32 @@ module sparc_tb();
             DUT.A_S, DUT.B_S, DUT.D_S, DUT.LE_DHDU, DUT.NOP
         );
     end
+    */
+
+    // =============================================================
+    // Wires para debug de registros específicos (RF interno)
+    // =============================================================
+    wire signed [31:0] r5  = DUT.ID.REG_FILE.r5;
+    wire signed [31:0] r6  = DUT.ID.REG_FILE.r6;
+    wire signed [31:0] r16 = DUT.ID.REG_FILE.r16;
+    wire signed [31:0] r17 = DUT.ID.REG_FILE.r17;
+    wire signed [31:0] r18 = DUT.ID.REG_FILE.r18;
+
+    // =============================================================
+    // Imprimir en cada flanco de subida del reloj
+    // =============================================================
+    
+    always @(posedge clk) begin
+        $display("t=%0t | PC=%0d NPC=%0d INTR_IF=%0b INSTR_ID=%0b INSTR_EX=%0b r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d A_EX=%0d B_EX=%0d D_EX=%0d CNTRL=%0b",
+                 $time,
+                 DUT.PC_fetch,
+                 DUT.nPC_fetch,
+                 DUT.instr_F,
+                 DUT.instr_ID,
+                 DUT.instr_ID_EX,
+                 r5, r6, r16, r17, r18, DUT.A_EX, DUT.B_EX, DUT.D_EX, DUT.id_ctrl_out);
+    end
+    
 
     // =============================================================
     // Leer palabra en DM[56] en t ≈ 76

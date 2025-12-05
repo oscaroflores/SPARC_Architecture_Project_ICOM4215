@@ -5,26 +5,35 @@ module sparc_top (
     input wire reset,
 
     // outputs visibles para el testbench
+    // FETCH stage outputs
     output [8:0]  PC_fetch,
     output [8:0]  nPC_fetch,
     output [31:0] instr_F,
+    output [8:0]  B_PC_F,
 
+    // IF/ID register outputs
     output [31:0] instr_ID,
     output [8:0]  B_PC_ID,
 
+    // DECODING stage outputs
     output [31:0] A_ID,
     output [31:0] B_ID,
     output [31:0] D_ID,
+    output [31:0] instr_ID_EX,
+    output [8:0]  TA,
+    output        J,
+    output        carry_out,
+    output [31:0] id_ctrl_out,
+
+    // ID/EX register outputs
     output [31:0] A_EX,
     output [31:0] B_EX,
     output [31:0] D_EX,
-    output [31:0] instr_ID_EX,
-    output [31:0] id_ctrl_out,
-    output [8:0]  TA,
 
+    // EXECUTE stage outputs
     output [31:0] ex_ctrl_out,
     output [31:0] D_MEM_tmp,
-    output [31:0] ALU_out_EX,
+    output [31:0] ALU_mux_out,
     output [4:0]  RD_EX_out,
     output [3:0]  CC_EX,
 
@@ -106,7 +115,7 @@ module sparc_top (
         .LE_DHDU(LE_DHDU),
         .J(J),
         .TA(TA),
-        .ALU_out(ALU_out_EX[8:0]),
+        .ALU_out(ALU_mux_out[8:0]),
 
         .instr_F(instr_F),
         .B_PC(B_PC_F),
@@ -137,10 +146,10 @@ module sparc_top (
         .clk(clk),
         .reset(reset),
         .B_PC_ID(B_PC_ID),
-        .instr_ID(instr_IF_ID),
+        .instr_IF_ID(instr_IF_ID),
 
         // Forwarding inputs
-        .ALU_Out_EX(ALU_out_EX),
+        .ALU_mux_out(ALU_mux_out),
         .data_mem_mux(data_mux_out),
         .PW_WB(PW_WB),
         .RW_WB(RW_WB),
@@ -165,7 +174,7 @@ module sparc_top (
         .A_ID(A_ID),
         .B_ID(B_ID),
         .D_ID(D_ID),
-        .instr_ID_EX(instr_ID),
+        .instr_ID(instr_ID),
         .TA(TA),
         .J(J),
         .carry_out(carry_flag),
@@ -217,7 +226,7 @@ module sparc_top (
         .clk(clk),
         .reset(reset),
 
-        .ex_alu_out_in(ALU_out_EX),
+        .ex_alu_out_in(ALU_mux_out),
         .ex_ctrl_in(ex_ctrl_out),
         .ex_rd_in(RD_EX_out),
         .ex_third_op_in(D_MEM_tmp),

@@ -28,10 +28,6 @@ module sparc_tb();
         reset = 1'b1;
         #3 reset = 1'b0;
     end
-
-    // =============================================================
-    // FIX PARA JDOODLE: evitar X en señales de control críticas
-    // (para que FETCH no se contamine al inicio)
     // =============================================================
     initial begin
         // Fuerza enable de PC/nPC y señales de brinco a algo conocido
@@ -52,54 +48,58 @@ module sparc_tb();
         release DUT.ALU_out_EX;
     end
 
-    // =============================================================
-    // INICIALIZAR REGISTER FILE: r1–r31 = 0 al inicio
-    // (para evitar propagación de X desde FFs sin reset explícito)
-    // =============================================================
-    initial begin
-        // Dejamos que el diseño se estabilice con esos valores
-        #20;
-
-        // Luego soltamos para que WriteBack pueda escribir normalmente
-
-    end
-    
     //////////////////////////////
-    wire [4:0]  RW_WB_tb   = DUT.RW_WB;
-    wire [31:0] PW_WB_tb   = DUT.PW_WB;
+    wire [4:0]  RW_WB_tb    = DUT.RW_WB;
+    wire [31:0] PW_WB_tb    = DUT.PW_WB;
     wire        RF_LE_WB_tb = DUT.RF_LE_WB;
 
-    /*
-    always @(posedge clk) begin
-        $display("t=%0t | PC=%0d | RF_LE_WB=%b RW_WB=%0d PW_WB=%0d",
-            $time, DUT.PC_fetch, RF_LE_WB_tb, RW_WB_tb, PW_WB_tb);
-        $display(" ");
+    // =============================================================
+    // Monitor por cambios en todo el pipeline
+    // =============================================================
+    initial begin
+        $display("========== PIPELINE MONITOR ==========");
+        $monitor(
+            "t=%0t\n\
+            [FETCH]      PC=%0d  nPC=%0d  INSTR_F=%b\n\n\
+            [IF/ID]     INSTR_IF_ID=%b\n\n\
+            [DECODE]     INSTR_ID=%b  B_PC_ID=%0b TA=%0b J=%0b\n\
+                        A_ID=%b  B_ID=%b  D_ID=%b  CARRY_OUT=%b  ID_CTRL=%b\n\n\
+            [ID/EX]      INSTR_ID_EX=%b\n\
+                        A_EX=%b  B_EX=%b  D_EX=%b\n\
+                        ID_CTRL=%b   TA=%0b\n\n\
+            [EXECUTE]    ALU=%b  RD_EX=%0d  CC=%b\n\
+                        EX_CTRL=%b  D_MEM_tmp=%b\n\n\
+            [MEM]        DATA_MUX=%b  MEM_CTRL=%b RD_MEM=%0d\n\n\
+            [WRITEBACK]  PW_WB=%b RW_WB=%0d RF_LE=%b\n\
+                        WB_CTRL=%b\n\n\
+            [DHDU]       A_S=%b B_S=%b D_S=%b  LE=%b  NOP=%b\n\n\
+            ------------------------------------------------------\n",
+            $time,
+            // FETCH
+            DUT.PC_fetch, DUT.nPC_fetch, DUT.instr_F,
+            // IF/ID
+            DUT.instr_IF_ID,
+            // DECODE
+            DUT.instr_ID_EX, DUT.B_PC_ID, DUT.TA, DUT.J,
+            DUT.A_ID, DUT.B_ID, DUT.D_ID, DUT.carry_out, DUT.id_ctrl_out,
+            // ID/EX
+            DUT.instr_ID_EX,
+            DUT.A_EX, DUT.B_EX, DUT.D_EX,
+            DUT.id_ctrl_out, DUT.TA,
+            // EXECUTE
+            DUT.ALU_mux_out, DUT.RD_EX_out, DUT.CC_EX,
+            DUT.ex_ctrl_out, DUT.D_MEM_out,DUT.L_EX, DUT.RF_LE_EX,
+            // EX/MEM
+            
+            // MEM
+            DUT.data_mux_out, DUT.mem_ctrl_out, DUT.rd_mem,
+            // WB
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            DUT.wb_ctrl_out,
+            // DHDU
+            DUT.A_S, DUT.B_S, DUT.D_S, DUT.LE_DHDU, DUT.NOP
+        );
     end
-    */
-
-    // =============================================================
-    // Wires para debug de registros específicos (RF interno)
-    // =============================================================
-    wire signed [31:0] r5  = DUT.ID.REG_FILE.r5;
-    wire signed [31:0] r6  = DUT.ID.REG_FILE.r6;
-    wire signed [31:0] r16 = DUT.ID.REG_FILE.r16;
-    wire signed [31:0] r17 = DUT.ID.REG_FILE.r17;
-    wire signed [31:0] r18 = DUT.ID.REG_FILE.r18;
-
-    // =============================================================
-    // Imprimir en cada flanco de subida del reloj
-    // =============================================================
-    
-    always @(posedge clk) begin
-        $display("t=%0t | PC=%0d NPC=%0d  INSTR_ID=%0b INSTR_EX=%0b r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d A_EX=%0d B_EX=%0d D_EX=%0d",
-                 $time,
-                 DUT.PC_fetch,
-                 DUT.nPC_fetch,
-                 DUT.instr_ID,
-                 DUT.instr_ID_EX,
-                 r5, r6, r16, r17, r18, DUT.A_EX, DUT.B_EX, DUT.D_EX);
-    end
-    
 
     // =============================================================
     // Leer palabra en DM[56] en t ≈ 76

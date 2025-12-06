@@ -2,6 +2,10 @@
 // =======================================
 // EX/MEM: registro de señales de control y datos para MEM
 // =======================================
+`timescale 1ns/1ps
+// =======================================
+// EX/MEM: registro de señales de control y datos para MEM
+// =======================================
 module EX_MEM_reg (
     input              clk,
     input              reset,

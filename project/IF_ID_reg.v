@@ -1,7 +1,4 @@
 `timescale 1ns/1ps
-// =======================================
-// IF/ID: registro de instrucción y PC (B_PC)
-// =======================================
 module IF_ID_reg (
     input        clk, 
     input        reset, 

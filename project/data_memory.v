@@ -38,7 +38,7 @@ module data_memory(
                     Memory[A + 2] = DI[15:8];
                     Memory[A + 3] = DI[7:0];
                 end
-                default: DO = 32'b0;
+                default: DO = 32'b0;           //----------------------> se debe incluir el txt file aqui ya no esta.
             endcase
         end
     end

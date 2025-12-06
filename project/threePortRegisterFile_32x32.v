@@ -1,18 +1,8 @@
-
-// Autor: Elian Graciano Vazquez
-// Titulo: SPARC Three-Port Register File 
-////////////////////////////////////////////
-
 `timescale 1ns/1ps
 
 // Modulo del decoder 5x32. 
-module decoder_5to32 (output reg [31:0] O, input [4:0] D, input E);
-    always @* begin
-        if (E)
-            O = (32'b1 << D);
-        else
-            O = 32'b0;
-    end
+module decoder_5to32 (output [31:0] O, input [4:0] D, input E);
+    assign O = E ? (32'b1 << D) : 32'b0;
 endmodule
 
 //Modulo de los registros de 32 bits. Los mismos son "rising edge" utilizando posedge.
@@ -125,5 +115,17 @@ module threePortRegisterFile_32x32 (output [31:0] PA, PB, PD, input [4:0] RA, RB
 
     mux_32to1 MUX_D (PD, RD,r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,
         r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31);
+    // =============================================================
+    // Debug display for PA, PB, PD
+    // =============================================================
+    
+    /*always @(posedge Clk) begin
+        $display("t=%0t | RA=%0d RB=%0d RD=%0d | PA=%h PB=%h PD=%h | RW=%0d PW=%h LE=%b",
+                 $time,
+                 RA, RB, RD,
+                 PA, PB, PD,
+                 RW, PW, LE);
+    end
+*/
 
 endmodule

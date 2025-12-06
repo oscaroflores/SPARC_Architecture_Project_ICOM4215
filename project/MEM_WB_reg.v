@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module MEM_WB_reg (
     input        clk,
     input        reset,
@@ -17,6 +15,7 @@ module MEM_WB_reg (
     output reg [4:0]  rd_out
 );
 
+    // Pipeline register
     always @(posedge clk) begin
         if (reset) begin
             wb_ctrl_out  <= 32'b0;
@@ -28,5 +27,4 @@ module MEM_WB_reg (
             rd_out       <= rd_in;
         end
     end
-
 endmodule

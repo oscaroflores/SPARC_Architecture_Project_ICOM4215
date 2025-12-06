@@ -8,10 +8,10 @@ module decoding_stage_path #(
     input  wire                     clk,
     input  wire                     reset,
     input  wire [8:0]               B_PC_ID,         // desde IF/ID
-    input  wire [31:0]              instr_IF_ID,       // desde IF/ID
+    input  wire [31:0]              instr_ID,       // desde IF/ID
 
     // Forwarding / valores de etapas posteriores (necesarios para los muxes)
-    input  wire [31:0]              ALU_mux_out,     // forwarding desde EX stage
+    input  wire [31:0]              ALU_Out_EX,     // forwarding desde EX stage
     input  wire [31:0]              data_mem_mux,   // forwarding desde MEM/WB
     input  wire [31:0]              PW_WB,          // writeback data from WB stage        // forwarding desde MEM/WB
     input  wire [4:0]               RW_WB,          // writeback destination reg from WB stage
@@ -26,10 +26,10 @@ module decoding_stage_path #(
     input  wire [1:0]               B_S,
     input  wire [1:0]               D_S,
     // Salidas hacia la etapa EX (operandos y señales)
-    output wire [31:0]              A_ID,
-    output wire [31:0]              B_ID,
-    output wire [31:0]              D_ID,
-    output wire [31:0]              instr_ID,
+    output wire [31:0]              A_src,
+    output wire [31:0]              B_src,
+    output wire [31:0]              D_src,
+    output wire [31:0]              instr_EX,
     output wire [ADDR_WIDTH-1:0]    TA,
     output wire                     J,            // Va para la etapa de fetch
     output wire                     carry_out,    // Va para el alu en EX stage
@@ -40,7 +40,7 @@ module decoding_stage_path #(
     // Internal wires / señales auxiliares
     // ------------------------------------------------------------
     // TAG related
-    wire [29:0] disp22_ext = { {8{instr_IF_ID[21]}}, instr_IF_ID[21:0] }; // sign-extend 22 -> 30
+    wire [29:0] disp22_ext = { {8{instr_ID[21]}}, instr_ID[21:0] }; // sign-extend 22 -> 30
     wire [29:0] TAG_Offset;
 
     // Register file ports / decoded register addresses
@@ -61,9 +61,9 @@ module decoding_stage_path #(
     // ------------------------------------------------------------
     // Decode register numbers
     // ------------------------------------------------------------
-    assign RA_rf = instr_IF_ID[18:14];   // rs1
-    assign RB_rf = instr_IF_ID[4:0];     // rs2
-    assign RD_rf = instr_IF_ID[29:25];   // rd
+    assign RA_rf = instr_ID[18:14];   // rs1
+    assign RB_rf = instr_ID[4:0];     // rs2
+    assign RD_rf = instr_ID[29:25];   // rd
 
     // ------------------------------------------------------------
     // TAG unit (genera TA)
@@ -80,7 +80,7 @@ module decoding_stage_path #(
     TAG_OffsetMux #(.WIDTH(30)) TAG_Offset_Mux (
         .CALL   (id_ctrl_out[2]),
         .offset22 (disp22_ext),
-        .offset30 ({instr_IF_ID[29:0]}),
+        .offset30 ({instr_ID[29:0]}),
         .OffsetOut (TAG_Offset)
     );
     // ------------------------------------------------------------
@@ -97,38 +97,38 @@ module decoding_stage_path #(
         .RW (RW_WB),
 
         .PW (PW_WB),
-        .LE (RF_LE_WB),
+        .LE (RF_LE_WB),   //RF_LE_WB     -------------------------->>>>>>>>>>>>>>>> cambiar esto 
         .Clk(clk)
     );
 
     // ------------------------------------------------------------
-    // Forwarding Muxes -> salida A_ID, B_ID, D_ID
+    // Forwarding Muxes -> salida A_src, B_src, D_src
     // ------------------------------------------------------------
     FourToOneMux #(.WIDTH(32)) mux_A (
         .in0 (PA_rf),
-        .in1 (ALU_mux_out),
+        .in1 (ALU_Out_EX),
         .in2 (data_mem_mux),
         .in3 (PW_WB),
         .sel (sel_A),
-        .out (A_ID)
+        .out (A_src)
     );
 
     FourToOneMux #(.WIDTH(32)) mux_B (
         .in0 (PB_rf),
-        .in1 (ALU_mux_out),
+        .in1 (ALU_Out_EX),
         .in2 (data_mem_mux),
         .in3 (PW_WB),
         .sel (sel_B),
-        .out (B_ID)
+        .out (B_src)
     );
 
     FourToOneMux #(.WIDTH(32)) mux_D (
         .in0 (PD_rf),
-        .in1 (ALU_mux_out),
+        .in1 (ALU_Out_EX),
         .in2 (data_mem_mux),
         .in3 (PW_WB),
         .sel (sel_D),
-        .out (D_ID)
+        .out (D_src)
     );
 
     // ------------------------------------------------------------
@@ -141,6 +141,7 @@ module decoding_stage_path #(
         .CC_EN(id_ctrl_out[17]),
         .ICC(ALU_CC),
         .clock(clk),
+        .rst(reset),
         .CC_OUT(CCR_out),
         .carry_out(carry_out)
     );
@@ -155,10 +156,10 @@ module decoding_stage_path #(
     // ------------------------------------------------------------
     // CH: condition handler (combinacional) -> produce J (branch taken)
     // CH expects: BI, cond, ACC[3:0] -> J
-    // Mapear BI y cond desde instr_IF_ID (ajusta según tu encoding)
+    // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
-    wire [3:0] cond = instr_IF_ID[28:25]; // asunción típica
+    wire [3:0] cond = instr_ID[28:25]; // asunción típica
     wire [31:0] control_signals;
     wire reset_signal;
 
@@ -170,7 +171,7 @@ module decoding_stage_path #(
     );
 
     control_unit CU (
-        .I(instr_IF_ID),
+        .I(instr_ID),
         .control_signals(control_signals)
     );
 
@@ -185,7 +186,7 @@ module decoding_stage_path #(
         .jumpl(ex_ctrl_in[1]),
         .call(id_ctrl_out[2]),
         .J(J),
-        .I_29(instr_IF_ID[29]),
+        .I_29(instr_ID[29]),
         .global_reset(reset),
         .reset_out(reset_signal)
     );
@@ -193,6 +194,12 @@ module decoding_stage_path #(
     // ------------------------------------------------------------
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
-    assign instr_ID = instr_IF_ID;
+    assign instr_EX = instr_ID;
+/*   
+    always @(posedge clk) begin
+        $display("ID @t=%0t | instr_ID=%h instr_EX=%h | id_ctrl_out=%h",
+                 $time, instr_ID, instr_EX, id_ctrl_out);
+    end
+*/
 
 endmodule

@@ -1,0 +1,464 @@
+`timescale 1ns / 1ps
+
+// =====================
+//  FETCH PATH (IF stage)
+// =====================
+module fetch_path #(
+    parameter ADDR_WIDTH = 9,
+    parameter INST_WIDTH = 32,
+    // Puedes ajustar estos valores de reset si el profesor quiere algo distinto
+    parameter [ADDR_WIDTH-1:0] RESET_PC  = {ADDR_WIDTH{1'b0}},
+    parameter [ADDR_WIDTH-1:0] RESET_nPC = 9'd4      // PC=0, nPC=4 (byte addresses)
+)(
+    input  wire clk,
+    input  wire reset,
+
+    // Enables para poder hacer stalls más adelante
+    input  wire pc_LE,
+    input  wire npc_LE,
+
+    // Señales de control
+    input  wire call,   // control de instrucción JMPL
+    input  wire J,      // condición de branch tomada (condition handler)
+    input  wire jmpl,   // control de instrucción JMPL
+    // Entradas desde otras etapas
+    // TA y ALU_out vendrán luego del TA generator y del EX stage
+    input  wire [ADDR_WIDTH-1:0] TA,       // Target Address (branch/call)
+    input  wire [ADDR_WIDTH-1:0] ALU_out,  // Resultado de ALU para JMPL
+
+    // Salidas hacia el pipeline IF/ID
+    output wire [INST_WIDTH-1:0] instr_F,  // instrucción leída (a IF/ID)
+    output wire [ADDR_WIDTH-1:0] B_PC,     // PC para el TA generator en ID (B_PC)
+
+    // (Opcional) para debug/monitoreo
+    output wire [ADDR_WIDTH-1:0] PC_out,
+    output wire [ADDR_WIDTH-1:0] nPC_out
+);
+
+    // ======================
+    //  Registros PC y nPC
+    // ======================
+    reg [ADDR_WIDTH-1:0] PC_reg;
+    reg [ADDR_WIDTH-1:0] nPC_reg;
+
+    // ======================
+    //  Wires internos
+    // ======================
+
+    // Resultados de los ALU +4
+    wire [ADDR_WIDTH-1:0] TA_plus4;
+    wire [ADDR_WIDTH-1:0] nPC_plus4;
+    wire [ADDR_WIDTH-1:0] ALUout_plus4;
+
+    // Salida del OR (jumpl OR J)
+    wire branch_or_call;
+
+    // Salidas de los muxes
+    wire [ADDR_WIDTH-1:0] mux_TA_nPC_plus4_out; // escoge entre nPC+4 y TA+4
+    wire [ADDR_WIDTH-1:0] mux_TA_nPC_out;       // escoge entre nPC y TA
+    wire [ADDR_WIDTH-1:0] mux_nPC_next_src;     // entrada final de nPC
+    wire [ADDR_WIDTH-1:0] mux_PC_next_src;      // entrada final de PC
+
+    // ======================
+    //  Lógica combinacional
+    // ======================
+
+    // OR gate: call OR J
+    or2 u_or_branch_call (
+        .a(call),
+        .b(J),
+        .y(branch_or_call)
+    );
+
+    // ALU: TA + 4
+    add4 #(.WIDTH(ADDR_WIDTH)) u_add4_TA (
+        .A(TA),
+        .R(TA_plus4)
+    );
+
+    // ALU: nPC + 4
+    add4 #(.WIDTH(ADDR_WIDTH)) u_add4_nPC (
+        .A(nPC_reg),
+        .R(nPC_plus4)
+    );
+
+    // ALU: ALU_out + 4 (para JMPL)
+    add4 #(.WIDTH(ADDR_WIDTH)) u_add4_ALUout (
+        .A(ALU_out),
+        .R(ALUout_plus4)
+    );
+
+    // Primer par de muxes (controlados por OR(jmpl, J))
+    // Mux 1: escoge entre nPC+4 (secuencial) y TA+4 (brinco)
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
+        .d0(nPC_plus4),       // camino normal: nPC + 4
+        .d1(TA_plus4),        // camino de salto: TA + 4
+        .sel(branch_or_call),
+        .y(mux_TA_nPC_plus4_out)
+    );
+
+    // Mux 2: escoge entre nPC y TA para el PC
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC (
+        .d0(nPC_reg),         // camino normal: PC <- nPC
+        .d1(TA),              // camino de salto: PC <- TA
+        .sel(branch_or_call),
+        .y(mux_TA_nPC_out)
+    );
+
+    // Segundo par de muxes (controlados directamente por jumpl)
+
+    // Mux 3: entrada final del registro nPC
+    // Entradas: (TA+4 / nPC+4) vs (ALU_out + 4)
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_nPC_next (
+        .d0(mux_TA_nPC_plus4_out), // normal / branch
+        .d1(ALUout_plus4),
+        .sel(jmpl),
+        .y(mux_nPC_next_src)
+    );
+
+    // Mux 4: entrada final del registro PC
+    // Entradas: (TA / nPC) vs ALU_out directo
+    TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_PC_next (
+        .d0(mux_TA_nPC_out),   // normal / branch
+        .d1(ALU_out),          // JMPL
+        .sel(jmpl),
+        .y(mux_PC_next_src)
+    );
+
+    // ======================
+    //  Registros PC y nPC
+    // ======================
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            PC_reg  <= RESET_PC;
+            nPC_reg <= RESET_nPC;
+        end else begin
+            if (pc_LE)
+                PC_reg <= mux_PC_next_src;
+            if (npc_LE)
+                nPC_reg <= mux_nPC_next_src;
+        end
+    end
+
+    // ======================
+    //  Instruction Memory
+    // ======================
+    // OJO: usa el nombre real de tu módulo de memoria de instrucciones
+    instruction_memory u_imem (
+        .A(PC_reg),     // dirección = PC de 9 bits
+        .I(instr_F)     // instrucción de 32 bits hacia IF/ID
+    );
+
+    // ======================
+    //  Salidas hacia IF/ID
+    // ======================
+    assign B_PC    = PC_reg;   // PC que se mandará al registro IF/ID (para TA generator)
+    assign PC_out  = PC_reg;   // opcionales, por si los quieres ver en testbench
+    assign nPC_out = nPC_reg;
+
+endmodule
+
+`timescale 1ns / 1ps
+
+module decoding_stage_path #(
+    parameter ADDR_WIDTH = 9,
+    parameter RESET_PC   = 9'd0,
+    parameter RESET_nPC  = 9'd4
+)(
+    input  wire                     clk,
+    input  wire                     reset,
+    input  wire [8:0]              B_PC_ID,        // desde IF/ID
+    input  wire [31:0]              instr_ID,       // desde IF/ID
+
+    // Forwarding / valores de etapas posteriores (necesarios para los muxes)
+    input  wire [31:0]              ALU_Out_EX,     // forwarding desde EX stage
+    input  wire [31:0]              data_mem_mux,   // forwarding desde MEM/WB
+    input  wire [31:0]              PW_WB,          // writeback data from WB stage
+    input  wire [4:0]               RW_WB,          // writeback destination reg from WB stage
+    input  wire                     RF_LE_WB,       // register file write enable (WB stage)
+    input wire [31:0]               id_ctrl_in,    // señales de control desde CU
+    // Señales para CCR (vienen normalmente del EX stage / control)
+    input  wire                     CC_EN,          // habilita carga del CCR (desde EX / control)
+    input  wire [3:0]               ICC_in,         // datos a cargar en CCR (desde EX stage)
+
+    // Salidas hacia la etapa EX (operandos y señales)
+    output wire [31:0]              A_src,
+    output wire [31:0]              B_src,
+    output wire [31:0]              D_src,
+    output wire [31:0]              B_PC_EX,
+    output wire [31:0]              I,
+    output wire [4:0]               RW_EX,
+    output wire [ADDR_WIDTH-1:0]    TA,
+    output wire [1:0]               SR,     // Va para el DHDU
+    output wire                     J,      // Va para la etapa de fetch
+    output wire                     carry_out, // Va para el alu en EX stage
+    output wire                     call,       // Va para la etapa de fetch
+    output wire [31:0]              id_ctrl_out
+);
+
+    // ------------------------------------------------------------
+    // Internal wires / señales auxiliares
+    // ------------------------------------------------------------
+    // TAG related
+    wire [29:0] disp22_ext = { {8{instr_ID[21]}}, instr_ID[21:0] }; // sign-extend 22 -> 30
+    wire [29:0] disp30     = instr_ID[29:0];
+    wire [29:0] TAG_Offset;
+
+    // Register file ports / decoded register addresses
+    wire [4:0] RA_rf;
+    wire [4:0] RB_rf;
+    wire [4:0] RD_rf;
+
+    // RF read data
+    wire [31:0] PA_rf;
+    wire [31:0] PB_rf;
+    wire [31:0] PD_rf;
+
+    // Forwarding selects (PROVISIONAL — deben venir del control unit)
+    wire [1:0] sel_A = 2'b00;
+    wire [1:0] sel_B = 2'b00;
+    wire [1:0] sel_D = 2'b00;
+
+    // ------------------------------------------------------------
+    // Decode register numbers (Format 3 assumed)
+    // ------------------------------------------------------------
+    assign RA_rf = instr_ID[18:14];   // rs1
+    assign RB_rf = instr_ID[4:0];     // rs2
+    assign RD_rf = instr_ID[29:25];   // rd
+    assign RW_EX = RD_rf;             // pasar rd a EX
+
+    // ------------------------------------------------------------
+    // TAG unit (genera TA)
+    // ------------------------------------------------------------
+    TAG #(
+        .PC_WIDTH(ADDR_WIDTH),
+        .OFFSET_WIDTH(30)
+    ) TAG0 (
+        .B_PC   (B_PC_ID[ADDR_WIDTH-1:0]),
+        .Offset (TAG_Offset),
+        .TA     (TA)
+    );
+
+    // Elección offset (22 sign-ext o 30) - provisional: CALL_ID=0 (debe venir del CU)
+    TAG_OffsetMux #(.WIDTH(30)) TAGMUX (
+        .CALL      (1'b0),
+        .offset22  (disp22_ext),
+        .offset30  (disp30),
+        .OffsetOut (TAG_Offset)
+    );
+
+    // ------------------------------------------------------------
+    // Register File (3-port)
+    // ------------------------------------------------------------
+    threePortRegisterFile_32x32 REG_FILE (
+        .PA (PA_rf),
+        .PB (PB_rf),
+        .PD (PD_rf),
+
+        .RA (RA_rf),
+        .RB (RB_rf),
+        .RD (RD_rf),
+        .RW (RW_WB),
+
+        .PW (PW_WB),
+        .LE (RF_LE_WB),
+        .Clk(clk)
+    );
+
+    // ------------------------------------------------------------
+    // Forwarding Muxes -> salida A_src, B_src, D_src
+    // ------------------------------------------------------------
+    FourToOneMux #(.WIDTH(32)) mux_A (
+        .in0 (PA_rf),
+        .in1 (ALU_Out_EX),
+        .in2 (data_mem_mux),
+        .in3 (PW_WB),
+        .sel (sel_A),
+        .out (A_src)
+    );
+
+    FourToOneMux #(.WIDTH(32)) mux_B (
+        .in0 (PB_rf),
+        .in1 (ALU_Out_EX),
+        .in2 (data_mem_mux),
+        .in3 (PW_WB),
+        .sel (sel_B),
+        .out (B_src)
+    );
+
+    FourToOneMux #(.WIDTH(32)) mux_D (
+        .in0 (PD_rf),
+        .in1 (ALU_Out_EX),
+        .in2 (data_mem_mux),
+        .in3 (PW_WB),
+        .sel (sel_D),
+        .out (D_src)
+    );
+
+    // ------------------------------------------------------------
+    // CCR: registro de flags global (instancio aquí; opcionalmente puede residir fuera)
+    // CCR interface (esperada): (CC_EN, ICC, clock, CC_OUT, carry_out)
+    // ------------------------------------------------------------
+    wire [3:0] CCR_out;
+    CCR u_CCR (
+        .CC_EN(CC_EN),
+        .ICC(ICC_in),
+        .clock(clk),
+        .CC_OUT(CCR_out),
+        .carry_out(carry_out)
+    );
+
+    // ------------------------------------------------------------
+    // CH: condition handler (combinacional) -> produce J (branch taken)
+    // CH expects: BI, cond, ACC[3:0] -> J
+    // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
+    // ------------------------------------------------------------
+    wire BI   = instr_ID[30];         // asunción: bit 30 = BI (ajusta si hace falta)
+    wire [3:0] cond = instr_ID[28:25]; // asunción típica
+
+    CH u_CH (
+        .BI(BI),
+        .cond(cond),
+        .ACC(CCR_out),
+        .J(J)
+    );
+
+    // ------------------------------------------------------------
+    // Otros outputs por defecto (call, SR). Deben venir del CU: (por ahora 0)
+    // ------------------------------------------------------------
+    assign call = 1'b0;
+    assign SR   = 2'b00; // salida de 2 bits (si la quieres conectar al CU, cambia)
+
+    // ------------------------------------------------------------
+    // Passthrough de B_PC e instrucción a EX
+    // ------------------------------------------------------------
+    assign B_PC_EX  = B_PC_ID;
+    assign I = instr_ID;
+    assign id_ctrl_out = id_ctrl_in;
+
+endmodule
+
+module execution_stage_path (
+    // Entradas
+    input  wire [31:0] A_EX,          // operando A desde RF
+    input  wire [31:0] B_EX,          // operando B desde RF
+    input  wire [31:0] instr_EX,      // instrucción en EX
+    input  wire [31:0] ex_ctrl_in,    // pasa directo a MEM
+    input  wire [31:0] D_EX,          // pasa directo a MEM
+    input  wire        C_flag,        // Carry del PSR (cuando aplique)
+
+    // Salidas
+    output wire [31:0] ALU_mux_out,
+    output wire [4:0]  RD_EX_out,
+    output wire [3:0]  CC_EX, 
+    output wire [31:0] ex_ctrl_out,
+    output wire [31:0] D_MEM_out,
+    output wire        L_EX,
+    output wire        RF_LE_EX
+);
+
+    // -----------------------------------------
+    // Decode de la instrucción
+    // -----------------------------------------
+    wire [4:0] RD_EX  = instr_EX[29:25];
+    wire [4:0] RS1_EX = instr_EX[18:14];
+    wire [4:0] RS2_EX = instr_EX[4:0];
+
+    // -----------------------------------------
+    // Señales de control del EX stage
+    // -----------------------------------------
+    wire [3:0] ALU_OP  = ex_ctrl_in[16:13];
+    wire [3:0] SOH_OP  = ex_ctrl_in[12:9];
+    wire       CALLbit = ex_ctrl_in[2];
+
+    // -----------------------------------------
+    // SOH UNIT
+    // -----------------------------------------
+    wire [31:0] SOH_out;
+
+    SOH soh0 (
+        .R   (B_EX),
+        .Imm (instr_EX[21:0]),
+        .Is  (SOH_OP),
+        .N   (SOH_out)
+    );
+
+    // -----------------------------------------
+    // ALU
+    // -----------------------------------------
+    wire [31:0] ALU_Out_EX;
+    wire Z_EX, N_EX, C_EX, V_EX;
+
+    ALU alu0 (
+        .Out (ALU_Out_EX),
+        .Z   (Z_EX),
+        .N   (N_EX),
+        .C   (C_EX),
+        .V   (V_EX),
+        .A   (A_EX),
+        .B   (SOH_out),
+        .Ci  (C_flag),
+        .OP  (ALU_OP)
+    );
+
+    assign CC_EX = {N_EX, Z_EX, V_EX, C_EX};
+
+    // -----------------------------------------
+    // MUX para CALL (rd = 15)
+    // -----------------------------------------
+    assign RD_EX_out = (CALLbit) ? 5'd15 : RD_EX;
+
+    // -----------------------------------------
+    // Sin PC en EX → pasar ALU directamente
+    // -----------------------------------------
+    assign ALU_mux_out = ALU_Out_EX;  
+
+    // -----------------------------------------
+    // Señales directas hacia MEM
+    // -----------------------------------------
+    assign ex_ctrl_out = ex_ctrl_in;
+    assign D_MEM_out   = D_EX;
+    assign L_EX        = ex_ctrl_in[4];
+    assign RF_LE_EX    = ex_ctrl_in[3];
+
+endmodule
+
+module memory_stage_path (
+    input  wire [31:0]  alu_result_in,
+    input  wire [31:0]  mem_ctrl_in,
+    input  wire [4:0]   rd_in,
+    input  wire [31:0]  DI,
+
+    output wire [31:0]  data_mux_out,
+    output wire [31:0]  mem_ctrl_out,
+    output wire [4:0]   rd_out
+);
+
+// Señales internas
+wire [1:0] Size;
+wire       RW;
+wire       E;
+wire       L;
+
+wire [31:0] data_out;
+
+// Señales de control
+assign Size = mem_ctrl_in[8:7];
+assign RW   = mem_ctrl_in[6];
+assign E    = mem_ctrl_in[5];
+assign L    = mem_ctrl_in[4];
+
+data_memory data_memory_inst (
+    .DI   (DI),
+    .A    (alu_result_in[8:0]),
+    .Size (Size),
+    .RW   (RW),
+    .E    (E),
+    .DO   (data_out)
+);
+
+assign data_mux_out = (L) ? data_out : alu_result_in;
+assign mem_ctrl_out = mem_ctrl_in;
+assign rd_out       = rd_in;
+
+endmodule

@@ -40,6 +40,8 @@ module sparc_top (
     // ======================================================
     // instr_F, PC_fetch, nPC_fetch ya son puertos de salida (wire implícito)
     wire [8:0]  B_PC_F;
+    wire [8:0]  B_PC_ID;
+    wire [8:0]  B_PC_EX;
 
     // ======================================================
     //  Señales IF/ID → DECODING
@@ -172,10 +174,8 @@ module sparc_top (
         .J(J),
         .carry_out(carry_flag),
         .id_ctrl_out(id_ctrl_out)
-
-   
     );
- 
+        
     
 /*    
 // =====================
@@ -232,7 +232,9 @@ end
         .B_ID(B_EX), 
         .D_ID(D_EX), 
         .id_ctrl_in(id_ctrl_out),
+        .B_PC_ID(B_PC_ID),
 
+        .B_PC_EX(B_PC_EX),
         .instr_EX(instr_EX3),
         .A_EX(A_EX2),
         .B_EX(B_EX2),
@@ -259,6 +261,7 @@ end
         .ex_ctrl_in(id_ctrl_out),
         .D_EX(D_EX2),
         .C_flag(carry_flag),
+        .B_PC_EX(B_PC_EX),
 
         .ALU_mux_out(ALU_out_EX),
         .RD_EX_out(RD_EX_out),
@@ -266,25 +269,25 @@ end
         .ex_ctrl_out(mempipe_ctrl_in),
         .D_MEM_out(D_MEM_tmp)
     );
-/*
+
   always @(posedge clk) begin
     if (!reset) begin
         $display("EX @ t=%0t", $time);
-        $display("  A_EX          = %h", A_EX2);
-        $display("  B_EX          = %h", B_EX2);
-        $display("  instr_EX      = %h", instr_EX3);
-        $display("  ex_ctrl_in    = %h", id_ctrl_out);
-        $display("  D_EX          = %h", D_EX2);
+        $display("  A_EX          = %b", A_EX2);
+        $display("  B_EX          = %b", B_EX2);
+        $display("  instr_EX      = %b", instr_EX3);
+        $display("  ex_ctrl_in    = %b", id_ctrl_out);
+        $display("  D_EX          = %b", D_EX2);
         $display("  C_flag        = %b", carry_flag);
-        $display("  ALU_mux_out   = %h", ALU_out_EX);
+        $display("  ALU_mux_out   = %b", ALU_out_EX);
         $display("  RD_EX_out     = %0d", RD_EX_out);
         $display("  CC_EX         = %b", CC_EX);
-        $display("  ex_ctrl_out   = %h", mempipe_ctrl_in);
-        $display("  D_MEM_out     = %h", D_MEM_tmp);
+        $display("  ex_ctrl_out   = %b", mempipe_ctrl_in);
+        $display("  D_MEM_out     = %b", D_MEM_tmp);
         $display("");  // blank line for readability
     end
 end
-*/
+
     // ======================================================
     // REGISTRO EX/MEM
     // ======================================================
@@ -322,7 +325,7 @@ end
     // ETAPA DE MEMORIA
     // ======================================================
     memory_stage_path MEM (
-        .alu_result_in(alu_result_in), //nada
+        .alu_result_in(alu_result_in),
         .mem_ctrl_in(mem_ctrl_in),
         .rd_in(rd_in),
         .DI(DI),
@@ -331,17 +334,16 @@ end
         .mem_ctrl_out(mem_ctrl_out),
         .rd_out(rd_mem)
     );
-    /*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("ID/EX @t=%0t | alu in=%h data mux out=%b memcontrolIN=%b",
-                     $time,
-                    alu_result_in,
-                   data_mux_out,
-                    mem_ctrl_in);       
-        end
-    end
-    */
+
+    // always @(posedge clk) begin
+    //     if (!reset) begin
+    //         $display("Memory stage @t=%0t | alu in=%b data mux out=%b memcontrolIN=%b",
+    //                  $time,
+    //                 alu_result_in,
+    //                data_mux_out,
+    //                 mem_ctrl_in);       
+    //     end
+    // end
     /*
     always @(posedge clk) begin
     if (!reset) begin

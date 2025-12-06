@@ -18,6 +18,9 @@ module ID_EX_reg (
     input  [31:0] instr_ID,
     output reg [31:0] instr_EX,
 
+    input  [8:0] B_PC_ID,
+    output reg [8:0] B_PC_EX,
+
     // Datos desde los muxes de data forwarding en ID
     input  [31:0] A_ID,   // operando A en ID
     input  [31:0] B_ID,   // operando B en ID
@@ -38,12 +41,15 @@ module ID_EX_reg (
             B_EX        <= 32'b0;
             D_EX        <= 32'b0;
             rd_EX       <= 5'b0;
+            B_PC_EX     <= 9'b0;
         end else begin
             ex_ctrl_out <= id_ctrl_in;
             instr_EX    <= instr_ID;
             A_EX        <= A_ID;
             B_EX        <= B_ID;
             D_EX        <= D_ID;
+            rd_EX       <= rd_ID;
+            B_PC_EX     <= B_PC_ID;
         end
     end
 

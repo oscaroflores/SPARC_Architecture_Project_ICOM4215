@@ -43,4 +43,9 @@ module data_memory(
         end
     end
 
+    // precargar
+    initial begin
+        $readmemb("debugging_code_SPARC.txt", Memory);
+    end
+
 endmodule

@@ -7,6 +7,10 @@ endmodule
 
 //Modulo de los registros de 32 bits. Los mismos son "rising edge" utilizando posedge.
 module Register32 (output reg [31:0] Q, input [31:0] D, input LE, Clk);
+    initial begin
+        Q = 32'h0000_0000;
+    end
+
     always @(posedge Clk) begin
         if (LE) Q <= D;
     end
@@ -119,13 +123,18 @@ module threePortRegisterFile_32x32 (output [31:0] PA, PB, PD, input [4:0] RA, RB
     // Debug display for PA, PB, PD
     // =============================================================
     
-    /*always @(posedge Clk) begin
-        $display("t=%0t | RA=%0d RB=%0d RD=%0d | PA=%h PB=%h PD=%h | RW=%0d PW=%h LE=%b",
-                 $time,
-                 RA, RB, RD,
-                 PA, PB, PD,
-                 RW, PW, LE);
-    end
-*/
+    // always @(posedge Clk) begin
+    //     $display("t=%0t | RA=%0d RB=%0d RD=%0d | PA=%h PB=%h PD=%h | RW=%0d PW=%d LE=%b",
+    //              $time, RA, RB, RD, PA, PB, PD, RW, PW, LE);
+    //     $display("Registers: R0=%d R1=%d R2=%d R3=%d R4=%d R5=%d R6=%d R7=%d", 
+    //              r0,r1,r2,r3,r4,r5,r6,r7);
+    //     $display("Registers: R8=%d R9=%d R10=%d R11=%d R12=%d R13=%d R14=%d R15=%d", 
+    //              r8,r9,r10,r11,r12,r13,r14,r15);
+    //     $display("Registers: R16=%d R17=%d R18=%d R19=%d R20=%d R21=%d R22=%d R23=%d", 
+    //              r16,r17,r18,r19,r20,r21,r22,r23);
+    //     $display("Registers: R24=%d R25=%d R26=%d R27=%d R28=%d R29=%d R30=%d R31=%d\n", 
+    //              r24,r25,r26,r27,r28,r29,r30,r31);
+    // end
+
 
 endmodule

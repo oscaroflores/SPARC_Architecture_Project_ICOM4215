@@ -30,29 +30,6 @@ module sparc_tb();
     end
 
     // =============================================================
-    // FIX PARA JDOODLE: evitar X en señales de control críticas
-    // (para que FETCH no se contamine al inicio)
-    // =============================================================
-    initial begin
-        // Fuerza enable de PC/nPC y señales de brinco a algo conocido
-        force DUT.LE_DHDU     = 1'b1;
-        force DUT.J           = 1'b0;
-        force DUT.TA          = 9'd0;
-
-        // Fuerza señales de control de EX que llegan a FETCH
-        force DUT.ex_ctrl_out = 32'b0;
-        force DUT.ALU_out_EX  = 32'b0;
-
-        // Después de unos ciclos, soltamos y dejamos que el diseño corra normal
-        #10;
-        release DUT.LE_DHDU;
-        release DUT.J;
-        release DUT.TA;
-        release DUT.ex_ctrl_out;
-        release DUT.ALU_out_EX;
-    end
-
-    // =============================================================
     // INICIALIZAR REGISTER FILE: r1–r31 = 0 al inicio
     // (para evitar propagación de X desde FFs sin reset explícito)
     // =============================================================

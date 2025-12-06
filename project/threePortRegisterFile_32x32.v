@@ -14,7 +14,7 @@ module Register32 (output reg [31:0] Q, input [31:0] D, input LE, Clk);
     initial begin
         Q = 32'h0000_0000;
     end
-    
+
     always @(posedge Clk) begin
         if (LE) Q <= D;
     end

@@ -6,6 +6,7 @@ module execution_stage_path (
     input  wire [31:0] ex_ctrl_in,    // pasa directo a MEM
     input  wire [31:0] D_EX,          // pasa directo a MEM
     input  wire        C_flag,        // Carry del PSR (cuando aplique)
+    input  wire [8:0]  B_PC_EX,       // Valor de PC en ID stage
 
     // Salidas
     output wire [31:0] ALU_mux_out,
@@ -66,12 +67,26 @@ module execution_stage_path (
     // -----------------------------------------
     // MUX para CALL (rd = 15)
     // -----------------------------------------
-    assign RD_EX_out = (CALLbit) ? 5'd15 : RD_EX;
+    TwoToOneMux #(
+        .WIDTH(5)
+    ) RD_mux (
+        .in0 (RD_EX),
+        .in1 (5'd15),
+        .sel (CALLbit),
+        .out (RD_EX_out)
+    );
 
     // -----------------------------------------
     // Sin PC en EX → pasar ALU directamente
     // -----------------------------------------
-    assign ALU_mux_out = ALU_Out_EX;  
+    TwoToOneMux #(
+        .WIDTH(32)
+    ) ALU_mux (
+        .in0 (ALU_Out_EX),
+        .in1 (B_PC_EX),
+        .sel (CALLbit),
+        .out (ALU_mux_out)
+    );
 
     // -----------------------------------------
     // Señales directas hacia MEM

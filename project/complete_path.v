@@ -249,10 +249,11 @@ end
         end
     end
     */
+    
     // ======================================================
     // ETAPA DE EJECUCIÓN (EX)
     // ======================================================
-    execution_stage_path EX (
+    /*execution_stage_path EX (
         .A_EX(A_EX2),
         .B_EX(B_EX2),
         .instr_EX(instr_EX3),
@@ -260,39 +261,127 @@ end
         .D_EX(D_EX2),
         .C_flag(carry_flag),
 
-        .ALU_mux_out(ALU_out_EX),
+        .ALU_mux_out(ALU_out_EX2),
         .RD_EX_out(RD_EX_out),
         .CC_EX(CC_EX),
         .ex_ctrl_out(mempipe_ctrl_in),
         .D_MEM_out(D_MEM_tmp)
     );
+*/
+  // Entradas
+  
+      // ======================================================
+    // ETAPA DE EJECUCIÓN (EX) INLINE
+    // ======================================================
+
+    // Decode de la instrucción en EX (viene del ID/EX)
+    wire [4:0] RD_EX  = instr_EX3[29:25];
+    wire [4:0] RS1_EX = instr_EX3[18:14];
+    wire [4:0] RS2_EX = instr_EX3[4:0];
+
+    // Señales de control del EX stage (desde ID/EX_reg → ex_ctrl_out)
+    wire [3:0] ALU_OP  = ex_ctrl_out[16:13];
+    wire [3:0] SOH_OP  = ex_ctrl_out[12:9];
+    wire       CALLbit = ex_ctrl_out[2];
+
+    // SOH UNIT
+    wire [31:0] SOH_out;
+
+    SOH soh0 (
+        .R   (B_EX2),
+        .Imm (instr_EX3[21:0]),
+        .Is  (SOH_OP),
+        .N   (SOH_out)
+    );
+
+    // ALU
+    wire [31:0] ALU_Out_EX2;
+    wire Z_EX, N_EX, C_EX, V_EX;
+
+    ALU alu0 (
+        .Out (ALU_Out_EX2),
+        .Z   (Z_EX),
+        .N   (N_EX),
+        .C   (C_EX),
+        .V   (V_EX),
+        .A   (A_EX2),
+        .B   (SOH_out),
+        .Ci  (carry_flag),
+        .OP  (ALU_OP)
+    );
+
+    // CC y resultado hacia afuera
+    assign CC_EX        = {N_EX, Z_EX, V_EX, C_EX};
+    
+    // MUX RD
+    TwoToOneMux #(.WIDTH(5)) RD_mux (
+        .in0 (RD_EX),
+        .in1 (5'd15),
+        .sel (CALLbit),
+        .out (RD_EX_out)
+    );
+    wire [31:0] Mux_to_mem;
+    // MUX ALU/PC
+    TwoToOneMux #(.WIDTH(32)) ALU_mux (
+        .in0 (ALU_Out_EX2),
+        .in1 (B_PC_EX),
+        .sel (CALLbit),
+        .out (Mux_to_mem)
+    );
+
+    // Señales directas hacia MEM (igual que antes)
+    assign mempipe_ctrl_in = ex_ctrl_out;
+    assign D_MEM_tmp       = D_EX2;
 /*
   always @(posedge clk) begin
     if (!reset) begin
-        $display("EX @ t=%0t", $time);
-        $display("  A_EX          = %h", A_EX2);
-        $display("  B_EX          = %h", B_EX2);
-        $display("  instr_EX      = %h", instr_EX3);
-        $display("  ex_ctrl_in    = %h", id_ctrl_out);
-        $display("  D_EX          = %h", D_EX2);
-        $display("  C_flag        = %b", carry_flag);
-        $display("  ALU_mux_out   = %h", ALU_out_EX);
-        $display("  RD_EX_out     = %0d", RD_EX_out);
-        $display("  CC_EX         = %b", CC_EX);
-        $display("  ex_ctrl_out   = %h", mempipe_ctrl_in);
-        $display("  D_MEM_out     = %h", D_MEM_tmp);
-        $display("");  // blank line for readability
+        $display("=============== EX STAGE @ t=%0t ===============", $time);
+        // Entradas desde ID/EX
+        $display("  instr_EX3        = %h", instr_EX3);
+        $display("  ex_ctrl_out      = %h", ex_ctrl_out);
+        $display("  A_EX2            = %h", A_EX2);
+        $display("  B_EX2            = %h", B_EX2);
+        $display("  D_EX2            = %h", D_EX2);
+        $display("  carry_flag (Ci)  = %b", carry_flag);
+
+        // Campos decodificados de la instrucción
+        $display("  RD_EX            = %0d", RD_EX);
+        $display("  RS1_EX           = %0d", RS1_EX);
+        $display("  RS2_EX           = %0d", RS2_EX);
+
+        // Señales de control para EX
+        $display("  ALU_OP           = %b", ALU_OP);
+        $display("  SOH_OP           = %b", SOH_OP);
+        $display("  CALLbit          = %b", CALLbit);
+
+        // SOH
+        $display("  SOH_out          = %h", SOH_out);
+
+        // ALU
+        $display("  ALU_Out_EX2      = %h", ALU_Out_EX2);
+        $display("  Z_EX             = %b", Z_EX);
+        $display("  N_EX             = %b", N_EX);
+        $display("  C_EX             = %b", C_EX);
+        $display("  V_EX             = %b", V_EX);
+
+        // Salidas hacia el resto del pipeline
+        $display("  CC_EX            = %b", CC_EX);
+        $display("  RD_EX_out        = %0d", RD_EX_out);
+        $display("  mempipe_ctrl_in  = %h", mempipe_ctrl_in);
+        $display("  D_MEM_tmp        = %h", D_MEM_tmp);
+        $display("=================================================\n");
     end
-end
+  end
 */
     // ======================================================
     // REGISTRO EX/MEM
     // ======================================================
+    
     EX_MEM_reg EX_MEM0 (
         .clk(clk),
         .reset(reset),
 
-        .ex_alu_out_in(ALU_out_EX),
+        .ex_alu_out_in(Mux_to_mem), 
         .ex_ctrl_in(mempipe_ctrl_in),
         .ex_rd_in(RD_EX_out),
         .ex_third_op_in(D_MEM_tmp),
@@ -302,6 +391,8 @@ end
         .mem_rd_out(rd_in),
         .mem_third_op_out(DI)
     );
+
+    
     /*
   always @(posedge clk) begin
     if (!reset) begin
@@ -373,7 +464,7 @@ end
         .wb_ctrl_out(wb_ctrl_out)
     );
    
-  
+  /*
     always @(posedge clk) begin
         if (!reset) begin
             $display("ID/EX @t=%0t |  PW_WB=%h RW_WB=%0d",
@@ -382,7 +473,7 @@ end
                     RW_WB);       
         end
     end
-
+*/
 
     // ======================================================
     // DHDU: Data Hazard Detection Unit

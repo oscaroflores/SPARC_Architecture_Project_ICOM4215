@@ -1,12 +1,9 @@
 module memory_stage_path (
     input  wire [31:0]  alu_result_in,
     input  wire [31:0]  mem_ctrl_in,
-    input  wire [4:0]   rd_in,
     input  wire [31:0]  DI,
 
-    output wire [31:0]  data_mux_out,
-    output wire [31:0]  mem_ctrl_out,
-    output wire [4:0]   rd_out
+    output wire [31:0]  data_mux_out
 );
 
 // Señales internas
@@ -32,8 +29,13 @@ data_memory data_memory_inst (
     .DO   (data_out)
 );
 
-assign data_mux_out = (L) ? data_out : alu_result_in;
-assign mem_ctrl_out = mem_ctrl_in;
-assign rd_out       = rd_in;
+TwoToOneMux #(
+    .WIDTH(32)
+) data_mux (
+    .in0(alu_result_in),
+    .in1(data_out),
+    .sel(L),
+    .out(data_mux_out)
+);
 
 endmodule

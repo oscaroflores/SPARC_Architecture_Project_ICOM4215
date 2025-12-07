@@ -14,7 +14,7 @@ module ALU (
     input  [3:0] OP
 );
 
-always @(*)
+always @(*) begin
     case (OP)
         4'b0000: Out = A + B; 
         4'b0001: Out = A + B + Ci;
@@ -33,6 +33,7 @@ always @(*)
         4'b1110: Out = B;
         4'b1111: Out = ~B;
     endcase
+end
 
 // El bit Z producirá un valor de uno cuando Out es igual a cero, de lo contrario producirá un cero
 assign Z = (Out == 32'b0);

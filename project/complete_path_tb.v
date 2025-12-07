@@ -30,102 +30,80 @@ module sparc_tb();
     end
 
     // =============================================================
-    // INICIALIZAR REGISTER FILE: r1–r31 = 0 al inicio
-    // (para evitar propagación de X desde FFs sin reset explícito)
-    // =============================================================
-    /*
-    initial begin
-        // Forzamos cada registro individual a 0
-        force DUT.ID.REG_FILE.r1  = 32'd0;
-        force DUT.ID.REG_FILE.r2  = 32'd0;
-        force DUT.ID.REG_FILE.r3  = 32'd0;
-        force DUT.ID.REG_FILE.r4  = 32'd0;
-        force DUT.ID.REG_FILE.r5  = 32'd0;
-        force DUT.ID.REG_FILE.r6  = 32'd0;
-        force DUT.ID.REG_FILE.r7  = 32'd0;
-        force DUT.ID.REG_FILE.r8  = 32'd0;
-        force DUT.ID.REG_FILE.r9  = 32'd0;
-        force DUT.ID.REG_FILE.r10 = 32'd0;
-        force DUT.ID.REG_FILE.r11 = 32'd0;
-        force DUT.ID.REG_FILE.r12 = 32'd0;
-        force DUT.ID.REG_FILE.r13 = 32'd0;
-        force DUT.ID.REG_FILE.r14 = 32'd0;
-        force DUT.ID.REG_FILE.r15 = 32'd0;
-        force DUT.ID.REG_FILE.r16 = 32'd0;
-        force DUT.ID.REG_FILE.r17 = 32'd0;
-        force DUT.ID.REG_FILE.r18 = 32'd0;
-        force DUT.ID.REG_FILE.r19 = 32'd0;
-        force DUT.ID.REG_FILE.r20 = 32'd0;
-        force DUT.ID.REG_FILE.r21 = 32'd0;
-        force DUT.ID.REG_FILE.r22 = 32'd0;
-        force DUT.ID.REG_FILE.r23 = 32'd0;
-        force DUT.ID.REG_FILE.r24 = 32'd0;
-        force DUT.ID.REG_FILE.r25 = 32'd0;
-        force DUT.ID.REG_FILE.r26 = 32'd0;
-        force DUT.ID.REG_FILE.r27 = 32'd0;
-        force DUT.ID.REG_FILE.r28 = 32'd0;
-        force DUT.ID.REG_FILE.r29 = 32'd0;
-        force DUT.ID.REG_FILE.r30 = 32'd0;
-        force DUT.ID.REG_FILE.r31 = 32'd0;
-
-        // Dejamos que el diseño se estabilice con esos valores
-        #20;
-
-        // Luego soltamos para que WriteBack pueda escribir normalmente
-        release DUT.ID.REG_FILE.r1;
-        release DUT.ID.REG_FILE.r2;
-        release DUT.ID.REG_FILE.r3;
-        release DUT.ID.REG_FILE.r4;
-        release DUT.ID.REG_FILE.r5;
-        release DUT.ID.REG_FILE.r6;
-        release DUT.ID.REG_FILE.r7;
-        release DUT.ID.REG_FILE.r8;
-        release DUT.ID.REG_FILE.r9;
-        release DUT.ID.REG_FILE.r10;
-        release DUT.ID.REG_FILE.r11;
-        release DUT.ID.REG_FILE.r12;
-        release DUT.ID.REG_FILE.r13;
-        release DUT.ID.REG_FILE.r14;
-        release DUT.ID.REG_FILE.r15;
-        release DUT.ID.REG_FILE.r16;
-        release DUT.ID.REG_FILE.r17;
-        release DUT.ID.REG_FILE.r18;
-        release DUT.ID.REG_FILE.r19;
-        release DUT.ID.REG_FILE.r20;
-        release DUT.ID.REG_FILE.r21;
-        release DUT.ID.REG_FILE.r22;
-        release DUT.ID.REG_FILE.r23;
-        release DUT.ID.REG_FILE.r24;
-        release DUT.ID.REG_FILE.r25;
-        release DUT.ID.REG_FILE.r26;
-        release DUT.ID.REG_FILE.r27;
-        release DUT.ID.REG_FILE.r28;
-        release DUT.ID.REG_FILE.r29;
-        release DUT.ID.REG_FILE.r30;
-        release DUT.ID.REG_FILE.r31;
-    end
-    */
-    //////////////////////////////
-
-    // =============================================================
     // Wires para debug de registros específicos (RF interno)
     // =============================================================
+    wire signed [31:0] r1  = DUT.ID.REG_FILE.r1;
+    wire signed [31:0] r2  = DUT.ID.REG_FILE.r2;
+    wire signed [31:0] r3  = DUT.ID.REG_FILE.r3;
+    wire signed [31:0] r4  = DUT.ID.REG_FILE.r4;
     wire signed [31:0] r5  = DUT.ID.REG_FILE.r5;
     wire signed [31:0] r6  = DUT.ID.REG_FILE.r6;
+    wire signed [31:0] r8  = DUT.ID.REG_FILE.r8;
+    wire signed [31:0] r10 = DUT.ID.REG_FILE.r10;
+    wire signed [31:0] r11 = DUT.ID.REG_FILE.r11;
+    wire signed [31:0] r12 = DUT.ID.REG_FILE.r12;
+    wire signed [31:0] r15 = DUT.ID.REG_FILE.r15;
     wire signed [31:0] r16 = DUT.ID.REG_FILE.r16;
     wire signed [31:0] r17 = DUT.ID.REG_FILE.r17;
     wire signed [31:0] r18 = DUT.ID.REG_FILE.r18;
 
+    
     // =============================================================
-    // Imprimir en cada flanco de subida del reloj
+    // Imprimir
     // =============================================================
 
-    always @(posedge clk) begin
-        $display("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
-                 $time,
-                 DUT.PC_fetch,
-                 r5, r6, r16, r17, r18);
+    initial begin
+        $monitor(
+            "PC=%0d  NPC=%0d | PW_WB=%0d  RW_WB=%0d  RF_LE_WB=%0b\n\
+            r1=%0d   r2=%0d   r3=%0d\n\
+            r4=%0d   r5=%0d   r6=%0d\n\
+            r8=%0d   r10=%0d  r11=%0d\n\
+            r12=%0d  r15=%0d  r16=%0d\n\
+            r17=%0d  r18=%0d\n\
+            -------------------------------------------------------------",
+            
+            // PC + WB control
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+
+            // Registers
+            r1,  r2,  r3,  
+            r4,  r5,  r6,
+            r8,  r10, r11, 
+            r12, r15, r16,
+            r17, r18
+        );
     end
+
+
+    // always @(posedge clk) begin
+    //     $display("PC=%0d NPC=%0d  
+    //     r5=%0d  
+    //     r6=%0d  
+    //     r16=%0d 
+    //     r17=%0d  
+    //     r18=%0d, 
+    //     DUT.PW_WB=%0d, DUT.RW_WB=%0d, DUT.RF_LE_WB=%0b",
+    //              DUT.PC_fetch,
+    //              DUT.nPC_fetch,
+    //              r5, r6, r16, r17, r18,
+    //              DUT.PW_WB,
+    //              DUT.RW_WB,
+    //              DUT.RF_LE_WB);
+    //     $display("------------------------------------------------------------");
+    //     // $display("ALU_Out_EX=%0d | ALU_mux_out=%0d | A_EX=%0d | B_EX=%0d | DUT.EX.ex_ctrl_out=%b | data_mux_out=%0d | L_MEM=%b",
+    //     //          DUT.ALU_out_EX,
+    //     //             DUT.ALU_mux_out,
+    //     //             DUT.A_EX,
+    //     //             DUT.B_EX,
+    //     //             DUT.ex_ctrl_out,
+    //     //             DUT.MEM.data_mux_out, 
+    //     //             DUT.MEM.L
+    //     //          );
+    //     // $display("============================================================");
+        
+    //     $display("");
+    // end
  
     // =============================================================
     // Leer palabra en DM[56] en t ≈ 76
@@ -142,7 +120,7 @@ module sparc_tb();
             DUT.MEM.data_memory_inst.Memory[59]
         };
 
-        $display("t=%0t | DM[56] = %b", $time, word56);
+        // $display("t=%0t | DM[56] = %b", $time, word56);
     end
 
     // =============================================================

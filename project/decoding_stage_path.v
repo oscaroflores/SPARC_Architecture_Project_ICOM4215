@@ -97,7 +97,7 @@ module decoding_stage_path #(
         .RW (RW_WB),
 
         .PW (PW_WB),
-        .LE (RF_LE_WB),   //RF_LE_WB     -------------------------->>>>>>>>>>>>>>>> cambiar esto 
+        .LE (RF_LE_WB),
         .Clk(clk)
     );
 
@@ -195,11 +195,5 @@ module decoding_stage_path #(
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
     assign instr_EX = instr_ID;
-/*   
-    always @(posedge clk) begin
-        $display("ID @t=%0t | instr_ID=%h instr_EX=%h | id_ctrl_out=%h",
-                 $time, instr_ID, instr_EX, id_ctrl_out);
-    end
-*/
 
 endmodule

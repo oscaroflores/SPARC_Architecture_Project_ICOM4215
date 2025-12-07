@@ -38,7 +38,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 3'b0;    //no lo estamos cambiando en ningun lado
+        ID_SR = 3'b0;
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -88,6 +88,13 @@ module control_unit(
                 
                 // OP = 10: Arithmetic, Logical, Shift, JMPL
                 2'b10: begin
+                    // Señales SR para DHDU:
+                    // - Todas las instrucciones de este grupo usan rs1 (RA)
+                    // - Usan rs2 (RB) solo si i_bit = 0 (operando de registro)
+                    ID_SR[0] = 1'b1;      // RA (rs1) es fuente válida
+                    if (!i_bit)
+                        ID_SR[1] = 1'b1;  // RB (rs2) es fuente válida cuando no es inmediato
+
                     case (op3[4]) // verificar si la instruccion altera los contidion codes
                         1'b0: CC = 0;
                         1'b1: CC = 1;
@@ -153,16 +160,25 @@ module control_unit(
 
                     case (op3[2])
                         1'b0: begin // load 
-                            L = 1;
+                            // Para load:
+                            // - Se usa rs1 como base de dirección (RA fuente válida)
+                            // - RD es destino, no fuente
+                            ID_SR[0]   = 1'b1;  // RA (rs1) se lee
+                            L          = 1;
                             RAM_Enable = 1;
-                            RF_LE = 1;
-                            SOH_OP = (i_bit ? 4'b1101 : 4'b1100);
+                            RF_LE      = 1;
+                            SOH_OP     = (i_bit ? 4'b1101 : 4'b1100);
                         end
 
                         default: begin // Store
+                            // Para store:
+                            // - Se usa rs1 como base de dirección (RA)
+                            // - El registro de datos (rd en tu codificación) es fuente
+                            ID_SR[0]   = 1'b1;  // RA (rs1) se lee
+                            ID_SR[2]   = 1'b1;  // RD (dato a almacenar) se lee
                             RAM_Enable = 1;
-                            RAM_RW = 1;
-                            SOH_OP = (i_bit ? 4'b1101 : 4'b1100);
+                            RAM_RW     = 1;
+                            SOH_OP     = (i_bit ? 4'b1101 : 4'b1100);
                         end
                     endcase
                 end

@@ -8,7 +8,7 @@ module sparc_top (
     output [31:0] instr_F,
 
     output [31:0] instr_ID,
-    output [8:0]  B_PC_ID,
+    output [8:0]  B_PC,
 
     output [31:0] A_EX,
     output [31:0] B_EX,
@@ -120,19 +120,11 @@ module sparc_top (
         .instr_out(instr_ID),
         .pc_out(B_PC_ID)
     );
-    /*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("IF/ID @t=%0t | instr_F=%h instr_ID=%h",
-                     $time,
-                    instr_F,
-                    instr_ID);       
-        end
-    end
-*/
+    
     // ======================================================
     // ETAPA DECODING
     // ======================================================
+    wire [31:0] Mux_to_mem; // Salida del mux entre ALU_out_EX y B_PC_EX para data forwarding, branches y Memory
     decoding_stage_path #(
         .ADDR_WIDTH(9),
         .RESET_PC(9'd0),
@@ -144,7 +136,7 @@ module sparc_top (
         .instr_ID(instr_ID),
 
         // Forwarding inputs
-        .ALU_Out_EX(ALU_out_EX),
+        .ALU_Out_EX(Mux_to_mem), 
         .data_mem_mux(data_mux_out),
         .PW_WB(PW_WB), //------------------------------->cambiar a PW_WB
         .RW_WB(RW_WB), //------------------------------->cambiar a RW_WB
@@ -176,47 +168,6 @@ module sparc_top (
         .id_ctrl_out(id_ctrl_out)
     );
         
-    
-/*    
-// =====================
-// DEBUG DISPLAY FOR DECODING
-// =====================
-always @(posedge clk) begin
-    if (!reset) begin
-        $display("==== DECODING @t=%0t ====", $time);
-        $display("  B_PC_ID     = %h", B_PC_ID);
-        $display("  instr_ID    = %h", instr_ID);
-
-        // Forwarding-related inputs
-        $display("  ALU_out_EX  = %h", ALU_out_EX);
-        $display("  data_mem_mux= %h", data_mux_out);
-        $display("  PW_WB       = %h", PW_WB);
-        $display("  RW_WB       = %0d", RW_WB);
-        $display("  RF_LE_WB    = %b", RF_LE_WB);
-
-        // DHDU & control
-        $display("  NOP         = %b", NOP);
-        $display("  LE_DHDU     = %b", LE_DHDU);
-        $display("  ALU_CC      = %b", CC_EX);
-        $display("  ex_ctrl_in  = %h", ex_ctrl_out);
-        $display("  A_S         = %b", A_S);
-        $display("  B_S         = %b", B_S);
-        $display("  D_S         = %b", D_S);
-
-        // Outputs towards EX
-        $display("  A_EX (A_src)= %h", A_EX);
-        $display("  B_EX (B_src)= %h", B_EX);
-        $display("  D_EX (D_src)= %h", D_EX);
-        $display("  instr_EX2   = %h", instr_EX2);
-        $display("  TA          = %h", TA);
-        $display("  J           = %b", J);
-        $display("  carry_flag  = %b", carry_flag);
-        $display("  id_ctrl_out = %h", id_ctrl_out);
-        $display("========================\n");
-    end
-end
-
-*/
     wire[31:0] instr_EX3;
     wire[31:0] D_EX2;
     wire[31:0] A_EX2;
@@ -241,17 +192,6 @@ end
         .D_EX(D_EX2),
         .ex_ctrl_out(ex_ctrl_out)
     );
-/*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("ID/EX @t=%0t | id_ctrl_out=%h ex_ctrl_out=%h",
-                     $time,
-                    id_ctrl_out,
-                    ex_ctrl_out);       
-        end
-    end
-    */
-    
     // ======================================================
     // ETAPA DE EJECUCIÓN (EX)
     // ======================================================
@@ -273,7 +213,7 @@ end
 */
   // Entradas
   
-      // ======================================================
+    // ======================================================
     // ETAPA DE EJECUCIÓN (EX) INLINE
     // ======================================================
 
@@ -323,7 +263,7 @@ end
         .sel (CALLbit),
         .out (RD_EX_out)
     );
-    wire [31:0] Mux_to_mem;
+    
     // MUX ALU/PC
     TwoToOneMux #(.WIDTH(32)) ALU_mux (
         .in0 (ALU_Out_EX2),
@@ -335,47 +275,7 @@ end
     // Señales directas hacia MEM (igual que antes)
     assign mempipe_ctrl_in = ex_ctrl_out;
     assign D_MEM_tmp       = D_EX2;
-/*
-  always @(posedge clk) begin
-    if (!reset) begin
-        $display("=============== EX STAGE @ t=%0t ===============", $time);
-        // Entradas desde ID/EX
-        $display("  instr_EX3        = %h", instr_EX3);
-        $display("  ex_ctrl_out      = %h", ex_ctrl_out);
-        $display("  A_EX2            = %h", A_EX2);
-        $display("  B_EX2            = %h", B_EX2);
-        $display("  D_EX2            = %h", D_EX2);
-        $display("  carry_flag (Ci)  = %b", carry_flag);
 
-        // Campos decodificados de la instrucción
-        $display("  RD_EX            = %0d", RD_EX);
-        $display("  RS1_EX           = %0d", RS1_EX);
-        $display("  RS2_EX           = %0d", RS2_EX);
-
-        // Señales de control para EX
-        $display("  ALU_OP           = %b", ALU_OP);
-        $display("  SOH_OP           = %b", SOH_OP);
-        $display("  CALLbit          = %b", CALLbit);
-
-        // SOH
-        $display("  SOH_out          = %h", SOH_out);
-
-        // ALU
-        $display("  ALU_Out_EX2      = %h", ALU_Out_EX2);
-        $display("  Z_EX             = %b", Z_EX);
-        $display("  N_EX             = %b", N_EX);
-        $display("  C_EX             = %b", C_EX);
-        $display("  V_EX             = %b", V_EX);
-
-        // Salidas hacia el resto del pipeline
-        $display("  CC_EX            = %b", CC_EX);
-        $display("  RD_EX_out        = %0d", RD_EX_out);
-        $display("  mempipe_ctrl_in  = %h", mempipe_ctrl_in);
-        $display("  D_MEM_tmp        = %h", D_MEM_tmp);
-        $display("=================================================\n");
-    end
-  end
-*/
     // ======================================================
     // REGISTRO EX/MEM
     // ======================================================
@@ -395,23 +295,6 @@ end
         .mem_third_op_out(DI)
     );
 
-    
-    /*
-  always @(posedge clk) begin
-    if (!reset) begin
-        $display("EX/MEM @ t=%0t", $time);
-        $display("  ex_alu_out_in   = %h", ALU_out_EX);
-        $display("  ex_ctrl_in      = %h", mempipe_ctrl_in);
-        $display("  ex_rd_in        = %0d", RD_EX_out);
-        $display("  ex_third_op_in  = %h", D_MEM_tmp);
-        $display("  mem_alu_out     = %h", alu_result_in);
-        $display("  mem_ctrl_out    = %h", mem_ctrl_in);
-        $display("  mem_rd_out      = %0d", rd_in);
-        $display("  mem_third_op_out= %h", DI);
-        $display("");  // blank line for readability
-    end
-end
-*/
     // ======================================================
     // ETAPA DE MEMORIA
     // ======================================================
@@ -425,31 +308,6 @@ end
         .mem_ctrl_out(mem_ctrl_out),
         .rd_out(rd_mem)
     );
-
-    // always @(posedge clk) begin
-    //     if (!reset) begin
-    //         $display("Memory stage @t=%0t | alu in=%b data mux out=%b memcontrolIN=%b",
-    //                  $time,
-    //                 alu_result_in,
-    //                data_mux_out,
-    //                 mem_ctrl_in);       
-    //     end
-    // end
-    /*
-    always @(posedge clk) begin
-    if (!reset) begin
-        $display("MEM @t=%0t | alu_result_in=%h mem_ctrl_in=%h rd_in=%0d DI=%h | data_mux_out=%h mem_ctrl_out=%h rd_mem=%0d",
-                 $time,
-                 alu_result_in,
-                 mem_ctrl_in,
-                 rd_in,
-                 DI,
-                 data_mux_out,
-                 mem_ctrl_out,
-                 rd_mem);
-    end
-end
-    */
     // ======================================================
     // REGISTRO MEM/WB
     // ======================================================
@@ -465,17 +323,6 @@ end
         .rd_out(RW_WB),
         .wb_ctrl_out(wb_ctrl_out)
     );
-   
-  /*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("ID/EX @t=%0t |  PW_WB=%h RW_WB=%0d",
-                     $time,
-                    PW_WB,
-                    RW_WB);       
-        end
-    end
-*/
 
     // ======================================================
     // DHDU: Data Hazard Detection Unit

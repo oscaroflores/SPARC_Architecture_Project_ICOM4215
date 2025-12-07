@@ -6,40 +6,77 @@ module data_memory(
     input   [1:0]   Size,
     input           RW,
     input           E,
+    input           SIGN_EXT,  // 1 = sign-extend para loads de byte/half
     output reg [31:0] DO
 );
 
-    reg [7:0] Memory[0:511]; // 256 localizaciones de 8 bits
+    reg [7:0] Memory[0:511]; // 512 bytes
 
     always @(*) begin
         DO = 32'b0;
-        // read
-        if (!RW) begin
+
+         // =========================
+        // READ (LOAD)
+        // =========================
+        if (!RW && E) begin
             case (Size)
-                2'b00: DO = {24'b0, Memory[A]};
-                2'b01: DO = {16'b0, Memory[A], Memory[A+1]};
-                2'b10: DO = {Memory[A], Memory[A+1], Memory[A+2], Memory[A+3]};
+                2'b00: begin
+                    // BYTE
+                    if (SIGN_EXT)
+                        DO = {{24{Memory[A][7]}}, Memory[A]};  // signed byte
+                    else
+                        DO = {24'b0, Memory[A]};               // unsigned byte
+                end
+                2'b01: begin
+                    // HALFWORD: Memory[A] es el byte alto
+                    if (SIGN_EXT)
+                        DO = {{16{Memory[A][7]}}, Memory[A], Memory[A+1]}; // signed half
+                    else
+                        DO = {16'b0, Memory[A], Memory[A+1]};              // unsigned half
+                end
+                2'b10: begin
+                    // WORD (no aplica sign-extend, ya es 32 bits)
+                    DO = {Memory[A], Memory[A+1], Memory[A+2], Memory[A+3]};
+                end
                 default: DO = 32'b0;
             endcase
+
+            // // Debug: lectura
+            // $display("DATA_MEM READ  @t=%0t | A=%0d Size=%b RW=%b E=%b SIGN_EXT=%b",
+            //          $time, A, Size, RW, E, SIGN_EXT);
+            // $display("   Bytes crudos: M[A]=%d M[A+1]=%d M[A+2]=%d M[A+3]=%d",
+            //          Memory[A], Memory[A+1], Memory[A+2], Memory[A+3]);
+            // $display("   DO (resultado) = %d\n", DO);
         end
-        // write
+
+        // =========================
+        // WRITE (STORE)
+        // =========================
         else if (RW && E) begin
             case (Size)
                 2'b00: begin
+                    // STORE BYTE (DI[7:0])
                     Memory[A] = DI[7:0];
                 end
                 2'b01: begin
-                    Memory[A] = DI[15:8];
+                    // STORE HALFWORD (DI[15:8] alto, DI[7:0] bajo)
+                    Memory[A]   = DI[15:8];
                     Memory[A+1] = DI[7:0];
                 end
                 2'b10: begin
-                    Memory[A] = DI[31:24];
-                    Memory[A + 1] = DI[23:16];
-                    Memory[A + 2] = DI[15:8];
-                    Memory[A + 3] = DI[7:0];
+                    // STORE WORD (big-endian)
+                    Memory[A]   = DI[31:24];
+                    Memory[A+1] = DI[23:16];
+                    Memory[A+2] = DI[15:8];
+                    Memory[A+3] = DI[7:0];
                 end
-                default: DO = 32'b0;           //----------------------> se debe incluir el txt file aqui ya no esta.
+                default: /* sin cambio */;
             endcase
+
+            // // Debug: escritura
+            // $display("DATA_MEM WRITE @t=%0t | A=%0d Size=%b RW=%b E=%b",
+            //          $time, A, Size, RW, E);
+            // $display("   DI (entrada)   = %h\n", DI);
         end
     end
 

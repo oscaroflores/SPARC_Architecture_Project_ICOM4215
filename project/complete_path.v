@@ -30,7 +30,7 @@ module sparc_top (
 
     output [31:0] PW_WB,
     output [4:0]  RW_WB,
-    output        RF_LE_WB_out,
+    output        RF_LE_WB,
 
     output [31:0] wb_ctrl_out
 );
@@ -67,11 +67,6 @@ module sparc_top (
     wire [31:0] alu_result_in;
     wire [4:0]  rd_in;
     wire [31:0] DI;
-
-    // ===============================
-    // RF_LE_WB wire interno
-    // ===============================
-    wire RF_LE_WB = wb_ctrl_out[3];
 
     // ===============================
     // ETAPA FETCH
@@ -264,6 +259,11 @@ module sparc_top (
         .rd_out(RW_WB),
         .wb_ctrl_out(wb_ctrl_out)
     );
+
+    // ===============================
+    // RF_LE_WB wire interno
+    // ===============================
+    wire RF_LE_WB = wb_ctrl_out[3];
 
     // ===============================
     // DHDU

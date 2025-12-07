@@ -19,6 +19,7 @@ assign Size = mem_ctrl_in[8:7];
 assign RW   = mem_ctrl_in[6];
 assign E    = mem_ctrl_in[5];
 assign L    = mem_ctrl_in[4];
+assign SIGN_EXTEND = mem_ctrl_in[21];
 
 data_memory data_memory_inst (
     .DI   (DI),
@@ -26,6 +27,7 @@ data_memory data_memory_inst (
     .Size (Size),
     .RW   (RW),
     .E    (E),
+    .SIGN_EXT (SIGN_EXTEND),
     .DO   (data_out)
 );
 

@@ -4,10 +4,10 @@ module control_unit(
     input      [31:0] I,
     output reg [31:0] control_signals
 );
-    wire [1:0] op    = I[31:30];   
-    wire [2:0] op2   = I[24:22];   
-    wire [5:0] op3   = I[24:19];   
-    wire i_bit       = I[13];      
+    wire [1:0] op    = I[31:30];
+    wire [2:0] op2   = I[24:22];
+    wire [5:0] op3   = I[24:19];
+    wire i_bit       = I[13];
 
     //verificamos si es un nop 
     wire is_nop = (I == 32'b0);    
@@ -24,6 +24,7 @@ module control_unit(
     reg       JMPL;
     reg       B;
     reg       CC;
+    reg       SIGN_EXT;
     reg [2:0]  ID_SR;
 
     always @(*) begin
@@ -38,7 +39,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 3'b0;    //no lo estamos cambiando en ningun lado
+        ID_SR = 3'b0;
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -88,6 +89,13 @@ module control_unit(
                 
                 // OP = 10: Arithmetic, Logical, Shift, JMPL
                 2'b10: begin
+                    // Señales SR para DHDU:
+                    // - Todas las instrucciones de este grupo usan rs1 (RA)
+                    // - Usan rs2 (RB) solo si i_bit = 0 (operando de registro)
+                    ID_SR[0] = 1'b1;      // RA (rs1) es fuente válida
+                    if (!i_bit)
+                        ID_SR[1] = 1'b1;  // RB (rs2) es fuente válida cuando no es inmediato
+
                     case (op3[4]) // verificar si la instruccion altera los contidion codes
                         1'b0: CC = 0;
                         1'b1: CC = 1;
@@ -139,30 +147,104 @@ module control_unit(
 
                 // OP = 11: Load y store    //maybe se puede crear un problema con el OP3 (OP=11)
                 2'b11: begin
-                    case (op[1:0]) 
-                        2'b01: begin
-                            RAM_Size = 2'b01;
-                            ALU_OP = 4'b0000;
+                    // Dirección siempre se calcula con la ALU: rs1 + (rs2 | simm13)
+                    ALU_OP     = 4'b0000;                        // suma
+                    SOH_OP     = (i_bit ? 4'b1101 : 4'b1100);    // genera offset (simm13 o rs2)
+                    RAM_Enable = 1'b0;
+                    RAM_RW     = 1'b0;
+                    RAM_Size   = 2'b00;
+                    L          = 1'b0;
+                    RF_LE      = 1'b0;
+                    SIGN_EXT   = 1'b0;
+
+                    case (op3)
+                        // ========= LOADS =========
+                        6'b000000: begin
+                            // LD  → load word (unsigned, pero es un word completo)
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b0;    // read
+                            RAM_Size   = 2'b10;   // word
+                            L          = 1'b1;    // ruta de load activa
+                            RF_LE      = 1'b1;    // escribir en RF
+                            SIGN_EXT   = 1'b0;    // no aplica, ya es word
                         end
 
-                        default: begin // store 
-                            RAM_Size = 2'b00;
-                            ALU_OP = 4'b0000;
-                        end
-                    endcase
-
-                    case (op3[2])
-                        1'b0: begin // load 
-                            L = 1;
-                            RAM_Enable = 1;
-                            RF_LE = 1;
-                            SOH_OP = (i_bit ? 4'b1101 : 4'b1100);
+                        6'b000001: begin
+                            // LDUB → load unsigned byte
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b0;
+                            RAM_Size   = 2'b00;   // byte
+                            L          = 1'b1;
+                            RF_LE      = 1'b1;
+                            SIGN_EXT   = 1'b0;    // zero-extend
                         end
 
-                        default: begin // Store
-                            RAM_Enable = 1;
-                            RAM_RW = 1;
-                            SOH_OP = (i_bit ? 4'b1101 : 4'b1100);
+                        6'b001001: begin
+                            // LDSB → load signed byte
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b0;
+                            RAM_Size   = 2'b00;   // byte
+                            L          = 1'b1;
+                            RF_LE      = 1'b1;
+                            SIGN_EXT   = 1'b1;    // sign-extend
+                        end
+
+                        6'b000010: begin
+                            // LDUH → load unsigned halfword
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b0;
+                            RAM_Size   = 2'b01;   // halfword
+                            L          = 1'b1;
+                            RF_LE      = 1'b1;
+                            SIGN_EXT   = 1'b0;    // zero-extend
+                        end
+
+                        6'b001010: begin
+                            // LDSH → load signed halfword
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b0;
+                            RAM_Size   = 2'b01;   // halfword
+                            L          = 1'b1;
+                            RF_LE      = 1'b1;
+                            SIGN_EXT   = 1'b1;    // sign-extend
+                        end
+
+                        // ========= STORES =========
+                        6'b000100: begin
+                            // ST → store word
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b1;    // write
+                            RAM_Size   = 2'b10;   // word
+                            ID_SR[0]   = 1'b1;
+                            ID_SR[2]   = 1'b1;
+                            // L=0, RF_LE=0
+                        end
+
+                        6'b000101: begin
+                            // STB → store byte
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b1;
+                            RAM_Size   = 2'b00;   // byte
+                            ID_SR[0]   = 1'b1;
+                            ID_SR[2]   = 1'b1;
+                        end
+
+                        6'b000110: begin
+                            // STH → store halfword
+                            RAM_Enable = 1'b1;
+                            RAM_RW     = 1'b1;
+                            RAM_Size   = 2'b01;   // halfword
+                            ID_SR[0]   = 1'b1;
+                            ID_SR[2]   = 1'b1;
+                        end
+
+                        default: begin
+                            // Otros (LDD, STD, alternates, etc.) → por ahora NOP o error
+                            RAM_Enable = 1'b0;
+                            RAM_RW     = 1'b0;
+                            L          = 1'b0;
+                            RF_LE      = 1'b0;
+                            SIGN_EXT   = 1'b0;
                         end
                     endcase
                 end
@@ -176,6 +258,7 @@ module control_unit(
 
         // Unimos todas las señales en el bus control_signals
         control_signals = 32'b0;
+        control_signals[21]     = SIGN_EXT;
         control_signals[20:18]    = ID_SR;
         control_signals[17]    = CC;
         control_signals[16:13] = ALU_OP;

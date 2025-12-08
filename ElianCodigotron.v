@@ -1,6 +1,4 @@
 `timescale 1ns / 1ps
-
-
 // Sumador especializado: R = A + 4
 module add4 #(
     parameter WIDTH = 32          // Ancho del bus (9 para PC/nPC, 32 para direcciones grandes, etc.)
@@ -21,13 +19,6 @@ endmodule
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 `timescale 1ns/1ps
-/* Tarea:
-En la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del ALU que se debe
-implementar. El ALU es un circuito combinacional (el efecto de las entradas se puede manifestar en las salidas
-casi de manera instantánea). Según indica la tabla de la verdad, el ALU toma dos números (A y B) y un bit de
-carry (Ci) y realiza operaciones con los mismos determinadas por la señal OP. El resultado de las operaciones
-es un número Out y cuatro flag bits de condiciones (Z, N, C y V). 
-*/
 module ALU (
     output reg [31:0] Out,
     output Z, N, C, V,
@@ -62,11 +53,6 @@ assign Z = (Out == 32'b0);
 // El bit N representa el signo del resultado de la operación (N = Out[31]).
 assign N = Out[31];
 
-/*
-C representa el bit de ”overflow” de operaciones de suma o resta de números sin signo. Se le
-denomina como “carry” para suma y como “borrow” para resta. Para la suma de dos números de n bits
-C es el bit n+1 del resultado de la suma. Para la resta de dos números (A - B) C será igual a 1 si A < B.
-*/
 wire [32:0] add_ext = {1'b0, A} + {1'b0, B} + Ci;
 wire [32:0] sub_ext = {1'b0, A} - ({1'b0, B} + Ci);
 
@@ -76,41 +62,10 @@ assign C = (OP == 4'b0000 || OP == 4'b0001) ? add_ext[32] :   // carry out of ad
            (OP == 4'b0010 || OP == 4'b0011) ? sub_ext[32] :   // borrow: 1 if A < B (+Ci)
            1'b0;
 
-/*
-V representa el bit de “overflow” de operaciones de suma o resta de números con signo. V es igual a 1
-cuando el signo del resultado de la suma o la resta no es consistente con las reglas de asignación de
-signo de operaciones aritméticas de números con signo, de lo contrario es igual a cero. V se puede
-determinar mediante una ecuación booleana de los signos de A, B y Out.
-Para A + B: V = ˜(A[31] ˆ B[31]) & (A[31] ˆ Out[31]).
-Para A - B: V = (A[31] ˆ B[31]) & (A[31] ˆ Out[31]).
-*/
 assign V = (OP == 4'b0000 || OP == 4'b0001) ? (~(A[31] ^ B[31]) & (A[31] ^ Out[31])) :
            (OP == 4'b0010 || OP == 4'b0011) ? ( (A[31] ^ B[31]) & (A[31] ^ Out[31])) :
            1'b0;
 
-
-    // =============================================================
-    // Debug display: Entradas A y B de la ALU
-    // =============================================================
-/*
-    initial begin
-        $display("==== MONITOREO ALU ====");
-    end
-
-    always @(*) begin
-        $display("t = %0t", $time);
-        $display("  Out  = %0d", Out);
-        $display("  OP  = %b", OP);
-        $display("  Ci  = %b", Ci);
-        $display("  A   = %h", A);
-        $display("  B   = %h", B);
-        $display("  Z = %h", Z);
-        $display("  N = %h", N);
-        $display("  C = %h", C);
-        $display("  V = %h", V);
-        $display("--------------------------\n");
-    end
-*/
 endmodule
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,16 +82,6 @@ module CCR (
         if (rst) begin
             CC_OUT    <= 4'b0000;
             carry_out <= 1'b0;
-            /*
-            // DEBUG display
-            $display("t=%0t | CCR RESET -> CC_OUT=0000 carry=0", $time);
-        end else if (CC_EN) begin
-            CC_OUT    <= ICC;
-            carry_out <= ICC[0]; 
-               // DEBUG display
-            $display("t=%0t | CCR UPDATE | ICC=%b (N Z V C) | CC_OUT=%b | carry=%b",
-                     $time, ICC, ICC, ICC[0]);
-                     */
         end
     end
 endmodule
@@ -189,14 +134,6 @@ end
 
 endmodule
 //////////////////////////////////////////////////////////////////
-
-
-
-/////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////
 
 `timescale 1ns / 1ps
 
@@ -837,24 +774,6 @@ always @(posedge clk) begin
             mem_rd_out       <= ex_rd_in;
         end
     end
-/*
-    // ============================
-    // Debug display EX → MEM
-    // ============================
-    initial begin
-        $display("===== EX_MEM_reg MONITOR =====");
-        $display(" t | ex_alu_out_in | mem_alu_out");
-        $display("================================");
-    end
-
-    // Usa $strobe para ver mem_alu_out ya actualizado
-    always @(posedge clk) begin
-        if (!reset) begin
-            $strobe("t=%0t | ex_alu_out_in=%0d | mem_alu_out=%0d",
-                    $time, ex_alu_out_in, mem_alu_out);
-        end
-    end
-    */
 endmodule
 
 
@@ -1208,15 +1127,6 @@ endmodule
 /////////////////////////////////////////////////////////
 
 `timescale 1ns/1ps
-/*
-Tarea:
-En el diagrama de la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del circuito que
-se debe implementar. Este es un circuito combinacional (el efecto de las entradas se puede manifestar en las
-salidas casi de manera instantánea). Según indica la tabla de la verdad, el circuito tiene como entradas un
-número de 32 bits (R), un número de 22 bits (Imm) y cuatro bits (IS) que corresponden a bits de una
-instrucción. El circuito tiene como salida un número N de 32 bits cuyo su valor depende de los inputs según
-indica la tabla de la verdad. El símbolo || significa concatenación.
-*/
 module SOH(
     input  [31:0] R,
   	input  [21:0] Imm,
@@ -1470,8 +1380,6 @@ module TwoToOneMux #(
 
 endmodule
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 `timescale 1ns / 1ps
 
 // =====================
@@ -1618,7 +1526,6 @@ module fetch_stage_path #(
     // ======================
     //  Instruction Memory
     // ======================
-    // OJO: usa el nombre real de tu módulo de memoria de instrucciones
     instruction_memory u_imem (
         .A(PC_reg),     // dirección = PC de 9 bits
         .I(instr_F)     // instrucción de 32 bits hacia IF/ID
@@ -1633,9 +1540,6 @@ module fetch_stage_path #(
 
 endmodule
 
-
-
-///////////////////////////
 `timescale 1ns / 1ps
 
 module decoding_stage_path #(
@@ -1738,7 +1642,7 @@ module decoding_stage_path #(
         .RW (RW_WB),
 
         .PW (PW_WB),
-        .LE (RF_LE_WB),   //RF_LE_WB     -------------------------->>>>>>>>>>>>>>>> cambiar esto 
+        .LE (RF_LE_WB),
         .Clk(clk)
     );
 
@@ -1793,22 +1697,14 @@ module decoding_stage_path #(
         .sel (ex_ctrl_in[17]),
         .out (CCR_out_muxed)
     );
-    /*
-    always @(posedge clk) begin
-    $display("CCR ICC : %b",ALU_CC);
-    $display("CCR out(ACC): %b", CCR_out);
-    $display("CCR out del mux: %b", CCR_out_muxed);
-     $display("CC_EN: %b", ex_ctrl_in[17]);
-     
-end
-*/
+
     // ------------------------------------------------------------
     // CH: condition handler (combinacional) -> produce J (branch taken)
     // CH expects: BI, cond, ACC[3:0] -> J
     // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
-    wire [3:0] cond = instr_ID[28:25]; ////////////////////////////////////////////////////////////////////////////////
+    wire [3:0] cond = instr_ID[28:25];
     wire [31:0] control_signals;
     wire reset_signal;
 
@@ -1844,19 +1740,8 @@ end
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
     assign instr_EX = instr_ID;
-/*   
-    always @(posedge clk) begin
-        $display("ID @t=%0t | instr_ID=%h instr_EX=%h | id_ctrl_out=%h",
-                 $time, instr_ID, instr_EX, id_ctrl_out);
-    end
-*/
 
 endmodule
-
-
-
-
-//////////////////////////////////////////
 
 module memory_stage_path (
     input  wire [31:0]  alu_result_in,
@@ -2083,47 +1968,6 @@ module sparc_top (
    
     );
  
-    
-/*    
-// =====================
-// DEBUG DISPLAY FOR DECODING
-// =====================
-always @(posedge clk) begin
-    if (!reset) begin
-        $display("==== DECODING @t=%0t ====", $time);
-        $display("  B_PC_ID     = %h", B_PC_ID);
-        $display("  instr_ID    = %h", instr_ID);
-
-        // Forwarding-related inputs
-        $display("  ALU_out_EX  = %h", ALU_out_EX);
-        $display("  data_mem_mux= %h", data_mux_out);
-        $display("  PW_WB       = %h", PW_WB);
-        $display("  RW_WB       = %0d", RW_WB);
-        $display("  RF_LE_WB    = %b", RF_LE_WB);
-
-        // DHDU & control
-        $display("  NOP         = %b", NOP);
-        $display("  LE_DHDU     = %b", LE_DHDU);
-        $display("  ALU_CC      = %b", CC_EX);
-        $display("  ex_ctrl_in  = %h", ex_ctrl_out);
-        $display("  A_S         = %b", A_S);
-        $display("  B_S         = %b", B_S);
-        $display("  D_S         = %b", D_S);
-
-        // Outputs towards EX
-        $display("  A_EX (A_src)= %h", A_EX);
-        $display("  B_EX (B_src)= %h", B_EX);
-        $display("  D_EX (D_src)= %h", D_EX);
-        $display("  instr_EX2   = %h", instr_EX2);
-        $display("  TA          = %h", TA);
-        $display("  J           = %b", J);
-        $display("  carry_flag  = %b", carry_flag);
-        $display("  id_ctrl_out = %h", id_ctrl_out);
-        $display("========================\n");
-    end
-end
-
-*/
     wire[31:0] instr_EX3;
     wire[31:0] D_EX2;
     wire[31:0] A_EX2;
@@ -2278,32 +2122,7 @@ end
         .mem_ctrl_out(mem_ctrl_out),
         .rd_out(rd_mem)
     );
-    /*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("ID/EX @t=%0t | alu in=%h data mux out=%b memcontrolIN=%b",
-                     $time,
-                    alu_result_in,
-                   data_mux_out,
-                    mem_ctrl_in);       
-        end
-    end
-    */
-    /*
-    always @(posedge clk) begin
-    if (!reset) begin
-        $display("MEM @t=%0t | alu_result_in=%h mem_ctrl_in=%h rd_in=%0d DI=%h | data_mux_out=%h mem_ctrl_out=%h rd_mem=%0d",
-                 $time,
-                 alu_result_in,
-                 mem_ctrl_in,
-                 rd_in,
-                 DI,
-                 data_mux_out,
-                 mem_ctrl_out,
-                 rd_mem);
-    end
-end
-    */
+
     // ======================================================
     // REGISTRO MEM/WB
     // ======================================================

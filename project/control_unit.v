@@ -4,10 +4,10 @@ module control_unit(
     input      [31:0] I,
     output reg [31:0] control_signals
 );
-    wire [1:0] op    = I[31:30];
-    wire [2:0] op2   = I[24:22];
-    wire [5:0] op3   = I[24:19];
-    wire i_bit       = I[13];
+    wire [1:0] op    = I[31:30];   
+    wire [2:0] op2   = I[24:22];   
+    wire [5:0] op3   = I[24:19];   
+    wire i_bit       = I[13];      
 
     //verificamos si es un nop 
     wire is_nop = (I == 32'b0);    
@@ -39,7 +39,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 3'b0;
+        ID_SR = 3'b0;   
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -69,12 +69,24 @@ module control_unit(
                         RAM_RW = 1'b1; 
                         end
                         
-                        default: begin // Branch
-                        B = 1; 
-                        //SOH_OP = 4'b0001; 
-                        ALU_OP = 4'b1101;
-                        RAM_Size = 2'b01;
-                        end
+                        3'b010: begin
+                        // ---------- Bicc: all conditional branches ----------
+                        // BA, BN, BE, BNE, BG, BLE, BGE, BL, BGU, BLEU, BCC, BCS, BPOS, BNEG, BVC, BVS
+                        B         = 1'b1;     
+                        RF_LE     = 1'b0;     
+                        CC        = 1'b0;     
+                        CALL      = 1'b0;
+                        JMPL      = 1'b0;
+                        L         = 1'b0;
+                        RAM_Enable= 1'b0;
+                        RAM_RW    = 1'b0;
+                        RAM_Size  = 2'b00;
+                        ID_SR     = 3'b000;   // no register sources for load/store hazard logic
+
+                        ALU_OP    = 4'b1101;  // "PC + disp" path (however you defined it)
+                        SOH_OP    = 4'b0001;  // for example: select disp22 as branch offset
+               
+    end
                     endcase
                 end
                 
@@ -89,12 +101,11 @@ module control_unit(
                 
                 // OP = 10: Arithmetic, Logical, Shift, JMPL
                 2'b10: begin
-                    // Señales SR para DHDU:
-                    // - Todas las instrucciones de este grupo usan rs1 (RA)
-                    // - Usan rs2 (RB) solo si i_bit = 0 (operando de registro)
+
                     ID_SR[0] = 1'b1;      // RA (rs1) es fuente válida
                     if (!i_bit)
                         ID_SR[1] = 1'b1;  // RB (rs2) es fuente válida cuando no es inmediato
+
 
                     case (op3[4]) // verificar si la instruccion altera los contidion codes
                         1'b0: CC = 0;
@@ -103,28 +114,28 @@ module control_unit(
 
                     case (op3)
 // ---------- Aritméticas ----------
-                        6'b000000: begin ALU_OP = 4'b0000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADD
-                        6'b010000: begin ALU_OP = 4'b0000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDCC
-                        6'b001000: begin ALU_OP = 4'b0001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDX
-                        6'b011000: begin ALU_OP = 4'b0001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDXCC
-                        6'b000100: begin ALU_OP = 4'b0010; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUB
-                        6'b010100: begin ALU_OP = 4'b0010; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBCC
-                        6'b001100: begin ALU_OP = 4'b0011; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBX
-                        //6'b011100: begin ALU_OP = 4'b0011; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBXCC
+                        6'b000000: begin ALU_OP = 4'b0000; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADD
+                        6'b010000: begin ALU_OP = 4'b0000; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDCC
+                        6'b001000: begin ALU_OP = 4'b0001; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDX
+                        6'b011000: begin ALU_OP = 4'b0001; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDXCC
+                        6'b000100: begin ALU_OP = 4'b0010; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUB
+                        6'b010100: begin ALU_OP = 4'b0010; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBCC
+                        6'b001100: begin ALU_OP = 4'b0011; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBX
+                        6'b011100: begin ALU_OP = 4'b0011; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBXCC
 
                         // ---------- Lógicas ----------
-                        6'b000001: begin ALU_OP = 4'b0100; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // AND
-                        6'b010001: begin ALU_OP = 4'b0100; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDCC
-                        6'b000101: begin ALU_OP = 4'b1000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDN
-                        6'b010101: begin ALU_OP = 4'b1000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDNCC
-                        6'b000010: begin ALU_OP = 4'b0101; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // OR
-                        6'b010010: begin ALU_OP = 4'b0101; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORCC
-                        6'b000110: begin ALU_OP = 4'b1001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORN
-                        6'b010110: begin ALU_OP = 4'b1001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORNCC
-                        6'b000011: begin ALU_OP = 4'b0110; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XOR
-                        6'b010011: begin ALU_OP = 4'b0110; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XORCC
-                        6'b000111: begin ALU_OP = 4'b0111; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNOR
-                        6'b010111: begin ALU_OP = 4'b0111; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNORCC
+                        6'b000001: begin ALU_OP = 4'b0100; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // AND
+                        6'b010001: begin ALU_OP = 4'b0100; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDCC
+                        6'b000101: begin ALU_OP = 4'b1000; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDN
+                        6'b010101: begin ALU_OP = 4'b1000; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDNCC
+                        6'b000010: begin ALU_OP = 4'b0101; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // OR
+                        6'b010010: begin ALU_OP = 4'b0101; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORCC
+                        6'b000110: begin ALU_OP = 4'b1001; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORN
+                        6'b010110: begin ALU_OP = 4'b1001; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORNCC
+                        6'b000011: begin ALU_OP = 4'b0110; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XOR
+                        6'b010011: begin ALU_OP = 4'b0110; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XORCC
+                        6'b000111: begin ALU_OP = 4'b0111; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNOR
+                        6'b010111: begin ALU_OP = 4'b0111; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNORCC
 
                         // ---------- Shifts ----------
                         6'b100101: begin ALU_OP = 4'b1010; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1011 : 4'b1010); end // SLL
@@ -145,7 +156,7 @@ module control_unit(
                 end
 
 
-                // OP = 11: Load y store    //maybe se puede crear un problema con el OP3 (OP=11)
+                                // OP = 11: Load y Store Integer
                 2'b11: begin
                     // Dirección siempre se calcula con la ALU: rs1 + (rs2 | simm13)
                     ALU_OP     = 4'b0000;                        // suma
@@ -160,94 +171,125 @@ module control_unit(
                     case (op3)
                         // ========= LOADS =========
                         6'b000000: begin
-                            // LD  → load word (unsigned, pero es un word completo)
+                            // LD load word (unsigned, pero es un word completo)
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;    // read
                             RAM_Size   = 2'b10;   // word
                             L          = 1'b1;    // ruta de load activa
                             RF_LE      = 1'b1;    // escribir en RF
                             SIGN_EXT   = 1'b0;    // no aplica, ya es word
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b000001: begin
-                            // LDUB → load unsigned byte
+                            // LDUB load unsigned byte
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b00;   // byte
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b0;    // zero-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b001001: begin
-                            // LDSB → load signed byte
+                            // LDSB load signed byte
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b00;   // byte
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b1;    // sign-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b000010: begin
-                            // LDUH → load unsigned halfword
+                            // LDUH load unsigned halfword
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b01;   // halfword
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b0;    // zero-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b001010: begin
-                            // LDSH → load signed halfword
+                            // LDSH load signed halfword
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b01;   // halfword
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b1;    // sign-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
-
+///////////////////////////////////////////////////////////////////////////////////
                         // ========= STORES =========
                         6'b000100: begin
-                            // ST → store word
+                            // ST store word
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;    // write
                             RAM_Size   = 2'b10;   // word
-                            ID_SR[0]   = 1'b1;
-                            ID_SR[2]   = 1'b1;
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                             // L=0, RF_LE=0
                         end
 
                         6'b000101: begin
-                            // STB → store byte
+                            // STB store byte
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;
                             RAM_Size   = 2'b00;   // byte
-                            ID_SR[0]   = 1'b1;
-                            ID_SR[2]   = 1'b1;
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                         end
 
                         6'b000110: begin
-                            // STH → store halfword
+                            // STH store halfword
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;
                             RAM_Size   = 2'b01;   // halfword
-                            ID_SR[0]   = 1'b1;
-                            ID_SR[2]   = 1'b1;
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                         end
 
                         default: begin
-                            // Otros (LDD, STD, alternates, etc.) → por ahora NOP o error
+                            // Otros 
                             RAM_Enable = 1'b0;
                             RAM_RW     = 1'b0;
                             L          = 1'b0;
                             RF_LE      = 1'b0;
                             SIGN_EXT   = 1'b0;
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                         end
                     endcase
                 end
+
 
                 default: begin
                     // Unknown OP
@@ -258,6 +300,7 @@ module control_unit(
 
         // Unimos todas las señales en el bus control_signals
         control_signals = 32'b0;
+        
         control_signals[21]     = SIGN_EXT;
         control_signals[20:18]    = ID_SR;
         control_signals[17]    = CC;

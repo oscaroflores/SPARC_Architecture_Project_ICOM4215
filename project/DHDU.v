@@ -46,10 +46,10 @@ module DHDU (
         // -----------------------------
         // LOAD–USE hazard => STALL + NOP
         // -----------------------------
-        if (EX_L &&
-           ( (SRA && (RA == EX_RD)) ||
-             (SRB && (RB == EX_RD)) ||
-             (SRC && (RD == EX_RD)) ) ) begin
+        if (EX_L &
+           ( (SRA & (RA == EX_RD)) ||
+             (SRB & (RB == EX_RD)) ||
+             (SRC & (RD == EX_RD)) ) ) begin
 
             LE  = 1'b0;  
             NOP = 1'b1;  
@@ -62,23 +62,23 @@ module DHDU (
 
             // RA forwarding
             if (SRA) begin
-                if (EX_RF_LE  && (RA == EX_RD))       A_S = 2'b01;
-                else if (MEM_RF_LE && (RA == MEM_RD)) A_S = 2'b10;
-                else if (WB_RF_LE  && (RA == WB_RD))  A_S = 2'b11;
+                if (EX_RF_LE  & (RA == EX_RD))       A_S = 2'b01;
+                else if (MEM_RF_LE & (RA == MEM_RD)) A_S = 2'b10;
+                else if (WB_RF_LE  & (RA == WB_RD))  A_S = 2'b11;
             end
 
             // RB forwarding
             if (SRB) begin
-                if (EX_RF_LE  && (RB == EX_RD))       B_S = 2'b01;
-                else if (MEM_RF_LE && (RB == MEM_RD)) B_S = 2'b10;
-                else if (WB_RF_LE  && (RB == WB_RD))  B_S = 2'b11;
+                if (EX_RF_LE  & (RB == EX_RD))       B_S = 2'b01;
+                else if (MEM_RF_LE & (RB == MEM_RD)) B_S = 2'b10;
+                else if (WB_RF_LE  & (RB == WB_RD))  B_S = 2'b11;
             end
 
             // RD forwarding (store data)
             if (SRC) begin
-                if (EX_RF_LE  && (RD == EX_RD))       D_S = 2'b01;
-                else if (MEM_RF_LE && (RD == MEM_RD)) D_S = 2'b10;
-                else if (WB_RF_LE  && (RD == WB_RD))  D_S = 2'b11;
+                if (EX_RF_LE  & (RD == EX_RD))       D_S = 2'b01;
+                else if (MEM_RF_LE & (RD == MEM_RD)) D_S = 2'b10;
+                else if (WB_RF_LE  & (RD == WB_RD))  D_S = 2'b11;
             end
         end
     end

@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module data_memory(
     input   [31:0]  DI,
     input   [8:0]   A,
@@ -8,6 +6,7 @@ module data_memory(
     input           E,
     input           SIGN_EXT,  // 1 = sign-extend para loads de byte/half
     output reg [31:0] DO
+    
 );
 
     reg [7:0] Memory[0:511]; // 512 bytes
@@ -41,14 +40,8 @@ module data_memory(
                 default: DO = 32'b0;
             endcase
 
-            // // Debug: lectura
-            // $display("DATA_MEM READ  @t=%0t | A=%0d Size=%b RW=%b E=%b SIGN_EXT=%b",
-            //          $time, A, Size, RW, E, SIGN_EXT);
-            // $display("   Bytes crudos: M[A]=%d M[A+1]=%d M[A+2]=%d M[A+3]=%d",
-            //          Memory[A], Memory[A+1], Memory[A+2], Memory[A+3]);
-            // $display("   DO (resultado) = %d\n", DO);
+           
         end
-
         // =========================
         // WRITE (STORE)
         // =========================
@@ -72,17 +65,103 @@ module data_memory(
                 end
                 default: /* sin cambio */;
             endcase
-
-            // // Debug: escritura
-            // $display("DATA_MEM WRITE @t=%0t | A=%0d Size=%b RW=%b E=%b",
-            //          $time, A, Size, RW, E);
-            // $display("   DI (entrada)   = %h\n", DI);
-        end
     end
-
-    // precargar
+    end
+    // ==========================================
+    // Pre-cargar Data Memory con instrucciones
+    // ==========================================
     initial begin
-        $readmemb("debugging_code_SPARC.txt", Memory);
+
+        // Instruction 1
+        Memory[0]  = 8'b10001010;
+        Memory[1]  = 8'b00000000;
+        Memory[2]  = 8'b00100000;
+        Memory[3]  = 8'b00111000;
+
+        // Instruction 2
+        Memory[4]  = 8'b11100000;
+        Memory[5]  = 8'b01001001;
+        Memory[6]  = 8'b01000000;
+        Memory[7]  = 8'b00000000;
+
+        // Instruction 3
+        Memory[8]  = 8'b11100010;
+        Memory[9]  = 8'b00001001;
+        Memory[10] = 8'b01100000;
+        Memory[11] = 8'b00000001;
+
+        // Instruction 4
+        Memory[12] = 8'b11100100;
+        Memory[13] = 8'b00001001;
+        Memory[14] = 8'b01100000;
+        Memory[15] = 8'b00000010;
+
+        // Instruction 5
+        Memory[16] = 8'b10001100;
+        Memory[17] = 8'b10000000;
+        Memory[18] = 8'b00000000;
+        Memory[19] = 8'b00010000;
+
+        // Instruction 6
+        Memory[20] = 8'b00011100;
+        Memory[21] = 8'b10000000;
+        Memory[22] = 8'b00000000;
+        Memory[23] = 8'b00000101;
+
+        // Instruction 7 (NOP)
+        Memory[24] = 8'b00000000;
+        Memory[25] = 8'b00000000;
+        Memory[26] = 8'b00000000;
+        Memory[27] = 8'b00000000;
+
+        // Instruction 8
+        Memory[28] = 8'b10001100;
+        Memory[29] = 8'b00100100;
+        Memory[30] = 8'b10000000;
+        Memory[31] = 8'b00010001;
+
+        // Instruction 9
+        Memory[32] = 8'b00010000;
+        Memory[33] = 8'b10000000;
+        Memory[34] = 8'b00000000;
+        Memory[35] = 8'b00000011;
+
+        // Instruction 10 (NOP)
+        Memory[36] = 8'b00000000;
+        Memory[37] = 8'b00000000;
+        Memory[38] = 8'b00000000;
+        Memory[39] = 8'b00000000;
+
+        // Instruction 11
+        Memory[40] = 8'b10001100;
+        Memory[41] = 8'b00000100;
+        Memory[42] = 8'b10000000;
+        Memory[43] = 8'b00010001;
+
+        // Instruction 12
+        Memory[44] = 8'b11001100;
+        Memory[45] = 8'b00101001;
+        Memory[46] = 8'b01100000;
+        Memory[47] = 8'b00000011;
+
+        // Instruction 13
+        Memory[48] = 8'b00010000;
+        Memory[49] = 8'b10000000;
+        Memory[50] = 8'b00000000;
+        Memory[51] = 8'b00000000;
+
+        // Instruction 14 (NOP)
+        Memory[52] = 8'b00000000;
+        Memory[53] = 8'b00000000;
+        Memory[54] = 8'b00000000;
+        Memory[55] = 8'b00000000;
+
+        // Instruction 15
+        Memory[56] = 8'b11111100;
+        Memory[57] = 8'b00010011;
+        Memory[58] = 8'b00100000;
+        Memory[59] = 8'b00000000;
+
     end
 
 endmodule

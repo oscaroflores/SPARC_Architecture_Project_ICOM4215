@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 module decoding_stage_path #(
     parameter ADDR_WIDTH = 9,
     parameter RESET_PC   = 9'd0,
@@ -9,6 +7,7 @@ module decoding_stage_path #(
     input  wire                     reset,
     input  wire [8:0]               B_PC_ID,         // desde IF/ID
     input  wire [31:0]              instr_ID,       // desde IF/ID
+    
 
     // Forwarding / valores de etapas posteriores (necesarios para los muxes)
     input  wire [31:0]              ALU_Out_EX,     // forwarding desde EX stage
@@ -21,6 +20,7 @@ module decoding_stage_path #(
     // Señales para CCR (vienen normalmente del EX stage / control)
     input  wire [3:0]               ALU_CC,        // datos a cargar en CCR (desde EX stage)
     input  wire [31:0]              ex_ctrl_in,    // señales de control
+
     // DHDU
     input  wire [1:0]               A_S,
     input  wire [1:0]               B_S,
@@ -35,6 +35,7 @@ module decoding_stage_path #(
     output wire                     carry_out,    // Va para el alu en EX stage
     output wire [31:0]              id_ctrl_out
 );
+    
 
     // ------------------------------------------------------------
     // Internal wires / señales auxiliares
@@ -97,7 +98,7 @@ module decoding_stage_path #(
         .RW (RW_WB),
 
         .PW (PW_WB),
-        .LE (RF_LE_WB),
+        .LE (RF_LE_WB),   //RF_LE_WB     -------------------------->>>>>>>>>>>>>>>> cambiar esto 
         .Clk(clk)
     );
 
@@ -138,7 +139,7 @@ module decoding_stage_path #(
     wire [3:0] CCR_out;
     wire [3:0] CCR_out_muxed;
     CCR u_CCR (
-        .CC_EN(id_ctrl_out[17]),
+        .CC_EN(ex_ctrl_in[17]),
         .ICC(ALU_CC),
         .clock(clk),
         .rst(reset),
@@ -149,17 +150,25 @@ module decoding_stage_path #(
     TwoToOneMux #(.WIDTH(4)) ccr_mux (
         .in0 (CCR_out),
         .in1 (ALU_CC),
-        .sel (id_ctrl_out[17]),
+        .sel (ex_ctrl_in[17]),
         .out (CCR_out_muxed)
     );
-
+    /*
+    always @(posedge clk) begin
+    $display("CCR ICC : %b",ALU_CC);
+    $display("CCR out(ACC): %b", CCR_out);
+    $display("CCR out del mux: %b", CCR_out_muxed);
+     $display("CC_EN: %b", ex_ctrl_in[17]);
+     
+end
+*/
     // ------------------------------------------------------------
     // CH: condition handler (combinacional) -> produce J (branch taken)
     // CH expects: BI, cond, ACC[3:0] -> J
     // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
-    wire [3:0] cond = instr_ID[28:25]; // asunción típica
+    wire [3:0] cond = instr_ID[28:25]; ////////////////////////////////////////////////////////////////////////////////
     wire [31:0] control_signals;
     wire reset_signal;
 
@@ -195,5 +204,11 @@ module decoding_stage_path #(
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
     assign instr_EX = instr_ID;
+/*   
+    always @(posedge clk) begin
+        $display("ID @t=%0t | instr_ID=%h instr_EX=%h | id_ctrl_out=%h",
+                 $time, instr_ID, instr_EX, id_ctrl_out);
+    end
+*/
 
 endmodule

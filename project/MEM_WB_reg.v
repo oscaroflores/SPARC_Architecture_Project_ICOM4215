@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module MEM_WB_reg (
     input        clk,
     input        reset,
@@ -27,4 +29,5 @@ module MEM_WB_reg (
             rd_out       <= rd_in;
         end
     end
+
 endmodule

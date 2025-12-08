@@ -14,7 +14,7 @@ module Register32 (output reg [31:0] Q, input [31:0] D, input LE, Clk);
     initial begin
         Q = 32'h0000_0000;
     end
-
+    
     always @(posedge Clk) begin
         if (LE) Q <= D;
     end
@@ -123,55 +123,5 @@ module threePortRegisterFile_32x32 (output [31:0] PA, PB, PD, input [4:0] RA, RB
 
     mux_32to1 MUX_D (PD, RD,r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14,r15,
         r16,r17,r18,r19,r20,r21,r22,r23,r24,r25,r26,r27,r28,r29,r30,r31);
-   // =============================================================
-    // Debug display: contenido completo del Register File
-    // =============================================================
-    /*always @(posedge Clk) begin
-        $display("==================================================");
-        $display("t = %0t", $time);
-        $display("RA = %0d", RA);
-        $display("RB = %0d", RB);
-        $display("RD = %0d", RD);
-        $display("RW = %0d", RW);
-        $display("PW = %d", PW);
-        $display("LE = %b", LE);
-        $display("PA = %h", PA);
-        $display("PB = %h", PB);
-        $display("PD = %h", PD);
-        $display("----------------- REGISTERS ----------------------");
-        $display("R0  = %d", r0);
-        $display("R1  = %d", r1);
-        $display("R2  = %d", r2);
-        $display("R3  = %d", r3);
-        $display("R4  = %d", r4);
-        $display("R5  = %d", r5);
-        $display("R6  = %d", r6);
-        $display("R7  = %d", r7);
-        $display("R8  = %d", r8);
-        $display("R9  = %d", r9);
-        $display("R10 = %d", r10);
-        $display("R11 = %d", r11);
-        $display("R12 = %d", r12);
-        $display("R13 = %d", r13);
-        $display("R14 = %d", r14);
-        $display("R15 = %d", r15);
-        $display("R16 = %d", r16);
-        $display("R17 = %d", r17);
-        $display("R18 = %d", r18);
-        $display("R19 = %d", r19);
-        $display("R20 = %d", r20);
-        $display("R21 = %d", r21);
-        $display("R22 = %d", r22);
-        $display("R23 = %d", r23);
-        $display("R24 = %d", r24);
-        $display("R25 = %d", r25);
-        $display("R26 = %d", r26);
-        $display("R27 = %d", r27);
-        $display("R28 = %d", r28);
-        $display("R29 = %d", r29);
-        $display("R30 = %d", r30);
-        $display("R31 = %d", r31);
-        $display("==================================================\n");
-    end
-*/
+
 endmodule

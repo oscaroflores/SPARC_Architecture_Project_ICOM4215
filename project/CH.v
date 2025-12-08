@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module CH(
     input        BI,    //indica si hay branch (control signal)
     input  [3:0] cond,  //bits [28:25 de la instruccion actual en decod]

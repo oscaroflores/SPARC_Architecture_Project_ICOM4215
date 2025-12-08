@@ -137,9 +137,9 @@ module sparc_top (
         // Forwarding inputs
         .ALU_Out_EX(Mux_to_mem),
         .data_mem_mux(data_mux_out),
-        .PW_WB(PW_WB), //------------------------------->cambiar a PW_WB
-        .RW_WB(RW_WB), //------------------------------->cambiar a RW_WB
-        .RF_LE_WB(RF_LE_WB ), //------------------------------------------------>cambiar a RF_LE_WB 
+        .PW_WB(PW_WB), 
+        .RW_WB(RW_WB), 
+        .RF_LE_WB(RF_LE_WB), 
 
         // DHDU hazard control
         .NOP(NOP),

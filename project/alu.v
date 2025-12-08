@@ -14,7 +14,7 @@ module ALU (
     input  [3:0] OP
 );
 
-always @(*) begin
+always @(*)
     case (OP)
         4'b0000: Out = A + B; 
         4'b0001: Out = A + B + Ci;
@@ -33,7 +33,6 @@ always @(*) begin
         4'b1110: Out = B;
         4'b1111: Out = ~B;
     endcase
-end
 
 // El bit Z producirá un valor de uno cuando Out es igual a cero, de lo contrario producirá un cero
 assign Z = (Out == 32'b0);
@@ -46,8 +45,11 @@ C representa el bit de ”overflow” de operaciones de suma o resta de números
 denomina como “carry” para suma y como “borrow” para resta. Para la suma de dos números de n bits
 C es el bit n+1 del resultado de la suma. Para la resta de dos números (A - B) C será igual a 1 si A < B.
 */
-assign C = (OP == 4'b0000 || OP == 4'b0001) ? {1'b0, A} + {1'b0, B} + Ci :
-           (OP == 4'b0010 || OP == 4'b0011) ? ~({1'b0, A} - {1'b0, B} - Ci) :
+wire [32:0] add_ext = {1'b0, A} + {1'b0, B} + Ci;
+wire [32:0] sub_ext = {1'b0, A} - ({1'b0, B} + Ci);
+
+assign C = (OP == 4'b0000 || OP == 4'b0001) ? add_ext[32] :   // carry out of add
+           (OP == 4'b0010 || OP == 4'b0011) ? sub_ext[32] :   // borrow: 1 if A < B (+Ci)
            1'b0;
 
 /*
@@ -61,5 +63,6 @@ Para A - B: V = (A[31] ˆ B[31]) & (A[31] ˆ Out[31]).
 assign V = (OP == 4'b0000 || OP == 4'b0001) ? (~(A[31] ^ B[31]) & (A[31] ^ Out[31])) :
            (OP == 4'b0010 || OP == 4'b0011) ? ( (A[31] ^ B[31]) & (A[31] ^ Out[31])) :
            1'b0;
+
 
 endmodule

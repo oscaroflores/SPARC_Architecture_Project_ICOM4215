@@ -564,6 +564,30 @@ module data_memory(
 
            
         end
+        // =========================
+        // WRITE (STORE)
+        // =========================
+        else if (RW && E) begin
+            case (Size)
+                2'b00: begin
+                    // STORE BYTE (DI[7:0])
+                    Memory[A] = DI[7:0];
+                end
+                2'b01: begin
+                    // STORE HALFWORD (DI[15:8] alto, DI[7:0] bajo)
+                    Memory[A]   = DI[15:8];
+                    Memory[A+1] = DI[7:0];
+                end
+                2'b10: begin
+                    // STORE WORD (big-endian)
+                    Memory[A]   = DI[31:24];
+                    Memory[A+1] = DI[23:16];
+                    Memory[A+2] = DI[15:8];
+                    Memory[A+3] = DI[7:0];
+                end
+                default: /* sin cambio */;
+            endcase
+    end
     end
     // ==========================================
     // Pre-cargar Data Memory con instrucciones
@@ -2831,7 +2855,7 @@ end
         .V   (V_EX),
         .A   (A_EX2),
         .B   (SOH_out),
-        .Ci  (Ci_to_ALU),
+        .Ci  (carry_flag),
         .OP  (ALU_OP)
     );
     
@@ -2858,45 +2882,7 @@ end
     assign mempipe_ctrl_in = ex_ctrl_out;
     assign D_MEM_tmp       = D_EX2;
 /*
-  always @(posedge clk) begin
-    if (!reset) begin
-        $display("=============== EX STAGE @ t=%0t ===============", $time);
-        // Entradas desde ID/EX
-        $display("  instr_EX3        = %h", instr_EX3);
-        $display("  ex_ctrl_out      = %h", ex_ctrl_out);
-        $display("  A_EX2            = %h", A_EX2);
-        $display("  B_EX2            = %h", B_EX2);
-        $display("  D_EX2            = %h", D_EX2);
-        $display("  carry_flag (Ci)  = %b", carry_flag);
-
-        // Campos decodificados de la instrucción
-        $display("  RD_EX            = %0d", RD_EX);
-        $display("  RS1_EX           = %0d", RS1_EX);
-        $display("  RS2_EX           = %0d", RS2_EX);
-
-        // Señales de control para EX
-        $display("  ALU_OP           = %b", ALU_OP);
-        $display("  SOH_OP           = %b", SOH_OP);
-        $display("  CALLbit          = %b", CALLbit);
-
-        // SOH
-        $display("  SOH_out          = %h", SOH_out);
-
-        // ALU
-        $display("  ALU_Out_EX2      = %h", ALU_Out_EX2);
-        $display("  Z_EX             = %b", Z_EX);
-        $display("  N_EX             = %b", N_EX);
-        $display("  C_EX             = %b", C_EX);
-        $display("  V_EX             = %b", V_EX);
-
-        // Salidas hacia el resto del pipeline
-        $display("  CC_EX            = %b", CC_EX);
-        $display("  RD_EX_out        = %0d", RD_EX_out);
-        $display("  mempipe_ctrl_in  = %h", mempipe_ctrl_in);
-        $display("  D_MEM_tmp        = %h", D_MEM_tmp);
-        $display("=================================================\n");
-    end
-  end
+  
 */
     // ======================================================
     // REGISTRO EX/MEM
@@ -3080,10 +3066,10 @@ end
     wire [2:0] opcode2 = DUT.instr_ID[24:22];
     wire [5:0] opcode3 = DUT.instr_ID[24:19];
 
-    
+    /*
     always @(posedge clk) begin
         // pequeño delay opcional para que se actualicen señales
-        #1;
+        
         //$display("------------------------------------------------");
         //$write("t=%0t ns | PC=%0d | Z=%b, N=%b, C=%b, V=%b, Ci=%b ", $time, DUT.PC_fetch, DUT.Z_EX, DUT.N_EX, DUT.C_EX, DUT.V_EX, DUT.Ci_to_ALU);
 
@@ -3224,8 +3210,8 @@ end
             endcase
         end
     end
-
-
+*/
+/*
 initial begin
         $monitor(
             "PC = %d\n\
@@ -3253,7 +3239,7 @@ initial begin
             DUT.mem_ctrl_in[5]
         );
     end
-    
+*/
     // =============================================================
     // Leer palabra en DM[56] en t ≈ 76
     // =============================================================

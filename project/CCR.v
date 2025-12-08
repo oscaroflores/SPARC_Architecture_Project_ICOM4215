@@ -10,9 +10,6 @@ module CCR (
         if (rst) begin
             CC_OUT    <= 4'b0000;
             carry_out <= 1'b0;
-        end else if (CC_EN) begin
-            CC_OUT    <= ICC;
-            carry_out <= ICC[0]; 
         end
     end
 endmodule

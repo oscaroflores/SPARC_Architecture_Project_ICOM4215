@@ -92,11 +92,11 @@ assign V = (OP == 4'b0000 || OP == 4'b0001) ? (~(A[31] ^ B[31]) & (A[31] ^ Out[3
     // =============================================================
     // Debug display: Entradas A y B de la ALU
     // =============================================================
-
+/*
     initial begin
         $display("==== MONITOREO ALU ====");
     end
-/*
+
     always @(*) begin
         $display("t = %0t", $time);
         $display("  Out  = %0d", Out);
@@ -145,9 +145,9 @@ endmodule
 //////////////////////////////////////////////////////
 
 module CH(
-    input        BI,
-    input  [3:0] cond,
-    input  [3:0] ACC,
+    input        BI,    //indica si hay branch (control signal)
+    input  [3:0] cond,  //bits [28:25 de la instruccion actual en decod]
+    input  [3:0] ACC,   //condition flags directo del ALU
     output reg   J
 );
 
@@ -174,17 +174,13 @@ always @(*) begin
         4'b0100: J =  (C | Z);         // BLEU
         4'b1101: J = ~C;               // BCC
         4'b0101: J =  C;               // BCS
-        4'b1110: J = ~N;               // **BPOS: branch if positive**
+        4'b1110: J = ~N;               // BPOS
         4'b0110: J =  N;               // BNEG
         4'b1111: J = ~V;               // BVC
         4'b0111: J =  V;               // BVS
         default: J = 1'b0;
         endcase
-    /*
-    // DEBUG: show condition codes and decision
-            $display("t=%0t | CH: BI=%b cond=%b | ACC=%b (N=%b Z=%b V=%b C=%b) | J=%b",
-                     $time, BI, cond, ACC, N, Z, V, C, J);
-    */    
+    
     end else begin
         J = 1'b0;
     end
@@ -318,28 +314,28 @@ module control_unit(
 
                     case (op3)
 // ---------- Aritméticas ----------
-                        6'b000000: begin ALU_OP = 4'b0000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADD
-                        6'b010000: begin ALU_OP = 4'b0000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDCC
-                        6'b001000: begin ALU_OP = 4'b0001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDX
-                        6'b011000: begin ALU_OP = 4'b0001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDXCC
-                        6'b000100: begin ALU_OP = 4'b0010; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUB
-                        6'b010100: begin ALU_OP = 4'b0010; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBCC
-                        6'b001100: begin ALU_OP = 4'b0011; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBX
+                        6'b000000: begin ALU_OP = 4'b0000; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADD
+                        6'b010000: begin ALU_OP = 4'b0000; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDCC
+                        6'b001000: begin ALU_OP = 4'b0001; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDX
+                        6'b011000: begin ALU_OP = 4'b0001; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ADDXCC
+                        6'b000100: begin ALU_OP = 4'b0010; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUB
+                        6'b010100: begin ALU_OP = 4'b0010; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBCC
+                        6'b001100: begin ALU_OP = 4'b0011; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBX
                         //6'b011100: begin ALU_OP = 4'b0011; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBXCC
 
                         // ---------- Lógicas ----------
-                        6'b000001: begin ALU_OP = 4'b0100; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // AND
-                        6'b010001: begin ALU_OP = 4'b0100; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDCC
-                        6'b000101: begin ALU_OP = 4'b1000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDN
-                        6'b010101: begin ALU_OP = 4'b1000; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDNCC
-                        6'b000010: begin ALU_OP = 4'b0101; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // OR
-                        6'b010010: begin ALU_OP = 4'b0101; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORCC
-                        6'b000110: begin ALU_OP = 4'b1001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORN
-                        6'b010110: begin ALU_OP = 4'b1001; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORNCC
-                        6'b000011: begin ALU_OP = 4'b0110; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XOR
-                        6'b010011: begin ALU_OP = 4'b0110; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XORCC
-                        6'b000111: begin ALU_OP = 4'b0111; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNOR
-                        6'b010111: begin ALU_OP = 4'b0111; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNORCC
+                        6'b000001: begin ALU_OP = 4'b0100; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // AND
+                        6'b010001: begin ALU_OP = 4'b0100; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDCC
+                        6'b000101: begin ALU_OP = 4'b1000; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDN
+                        6'b010101: begin ALU_OP = 4'b1000; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ANDNCC
+                        6'b000010: begin ALU_OP = 4'b0101; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // OR
+                        6'b010010: begin ALU_OP = 4'b0101; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORCC
+                        6'b000110: begin ALU_OP = 4'b1001; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORN
+                        6'b010110: begin ALU_OP = 4'b1001; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // ORNCC
+                        6'b000011: begin ALU_OP = 4'b0110; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XOR
+                        6'b010011: begin ALU_OP = 4'b0110; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XORCC
+                        6'b000111: begin ALU_OP = 4'b0111; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNOR
+                        6'b010111: begin ALU_OP = 4'b0111; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // XNORCC
 
                         // ---------- Shifts ----------
                         6'b100101: begin ALU_OP = 4'b1010; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1011 : 4'b1010); end // SLL
@@ -927,6 +923,8 @@ module ID_EX_reg (
     // RD
     input [4:0] rd_ID,
     output reg [4:0] rd_EX,
+
+    
 
     // Instrucción completa en ID (sale en EX)
     input  [31:0] instr_ID,
@@ -2311,6 +2309,7 @@ module decoding_stage_path #(
     input  wire                     reset,
     input  wire [8:0]               B_PC_ID,         // desde IF/ID
     input  wire [31:0]              instr_ID,       // desde IF/ID
+    
 
     // Forwarding / valores de etapas posteriores (necesarios para los muxes)
     input  wire [31:0]              ALU_Out_EX,     // forwarding desde EX stage
@@ -2323,6 +2322,7 @@ module decoding_stage_path #(
     // Señales para CCR (vienen normalmente del EX stage / control)
     input  wire [3:0]               ALU_CC,        // datos a cargar en CCR (desde EX stage)
     input  wire [31:0]              ex_ctrl_in,    // señales de control
+
     // DHDU
     input  wire [1:0]               A_S,
     input  wire [1:0]               B_S,
@@ -2337,6 +2337,10 @@ module decoding_stage_path #(
     output wire                     carry_out,    // Va para el alu en EX stage
     output wire [31:0]              id_ctrl_out
 );
+    always @(posedge clk) begin
+    $display("ex ctrl in : %b", ex_ctrl_in);
+    $display("id ctrl out: %b", id_ctrl_out);
+end
 
     // ------------------------------------------------------------
     // Internal wires / señales auxiliares
@@ -2440,7 +2444,7 @@ module decoding_stage_path #(
     wire [3:0] CCR_out;
     wire [3:0] CCR_out_muxed;
     CCR u_CCR (
-        .CC_EN(id_ctrl_out[17]),
+        .CC_EN(ex_ctrl_in[17]),
         .ICC(CC_EX),
         .clock(clk),
         .rst(reset),
@@ -2451,7 +2455,7 @@ module decoding_stage_path #(
     TwoToOneMux #(.WIDTH(4)) ccr_mux (
         .in0 (CCR_out),
         .in1 (CC_EX),
-        .sel (id_ctrl_out[17]),
+        .sel (ex_ctrl_in[17]),
         .out (CCR_out_muxed)
     );
 
@@ -2461,7 +2465,7 @@ module decoding_stage_path #(
     // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
-    wire [3:0] cond = instr_ID[25:22]; ////////////////////////////////////////////////////////////////////////////////
+    wire [3:0] cond = instr_ID[28:25]; ////////////////////////////////////////////////////////////////////////////////
     wire [31:0] control_signals;
     wire reset_signal;
 
@@ -3675,78 +3679,10 @@ module sparc_tb();
         #3 reset = 1'b0;
     end
 
-    // =============================================================
-    // evitar X en señales de control críticas
-    // (para que FETCH no se contamine al inicio)
-    // =============================================================
-    /*
-    initial begin
-    // 1) Forzar valores iniciales
-    force DUT.LE_DHDU     = 1'b0;
-    force DUT.J           = 1'b0;
-    force DUT.TA          = 9'd0;
-    force DUT.ex_ctrl_out = 32'b0;
-    force DUT.ALU_out_EX  = 32'b0;
 
     
-    // 2) Esperar SOLO el primer flanco de reloj
-    @(posedge clk);   // <- primer tick
-
-    // Pequeño delay opcional para dejar que el DUT capture esos 0 en ese flanco
-    #1;
-
-    // 3) Liberar para que el DUT tome control normal de las señales
-    release DUT.LE_DHDU;
-    release DUT.J;
-    release DUT.TA;
-    release DUT.ex_ctrl_out;
-    release DUT.ALU_out_EX;
 
     
-end
-*/
-    // =============================================================
-    // INICIALIZAR REGISTER FILE: r1–r31 = 0 al inicio
-    // (para evitar propagación de X desde FFs sin reset explícito)
-    // =============================================================
-    /*
-    initial begin
-        // Forzamos cada registro individual a 0
-        force DUT.ID.REG_FILE.r1  = 32'd0;
-        force DUT.ID.REG_FILE.r2  = 32'd0;
-        force DUT.ID.REG_FILE.r3  = 32'd0;
-        force DUT.ID.REG_FILE.r4  = 32'd0;
-        force DUT.ID.REG_FILE.r5  = 32'd0;
-        force DUT.ID.REG_FILE.r6  = 32'd0;
-        force DUT.ID.REG_FILE.r7  = 32'd0;
-        force DUT.ID.REG_FILE.r8  = 32'd0;
-        force DUT.ID.REG_FILE.r9  = 32'd0;
-        force DUT.ID.REG_FILE.r10 = 32'd0;
-        force DUT.ID.REG_FILE.r11 = 32'd0;
-        force DUT.ID.REG_FILE.r12 = 32'd0;
-        force DUT.ID.REG_FILE.r13 = 32'd0;
-        force DUT.ID.REG_FILE.r14 = 32'd0;
-        force DUT.ID.REG_FILE.r15 = 32'd0;
-        force DUT.ID.REG_FILE.r16 = 32'd0;
-        force DUT.ID.REG_FILE.r17 = 32'd0;
-        force DUT.ID.REG_FILE.r18 = 32'd0;
-        force DUT.ID.REG_FILE.r19 = 32'd0;
-        force DUT.ID.REG_FILE.r20 = 32'd0;
-        force DUT.ID.REG_FILE.r21 = 32'd0;
-        force DUT.ID.REG_FILE.r22 = 32'd0;
-        force DUT.ID.REG_FILE.r23 = 32'd0;
-        force DUT.ID.REG_FILE.r24 = 32'd0;
-        force DUT.ID.REG_FILE.r25 = 32'd0;
-        force DUT.ID.REG_FILE.r26 = 32'd0;
-        force DUT.ID.REG_FILE.r27 = 32'd0;
-        force DUT.ID.REG_FILE.r28 = 32'd0;
-        force DUT.ID.REG_FILE.r29 = 32'd0;
-        force DUT.ID.REG_FILE.r30 = 32'd0;
-        force DUT.ID.REG_FILE.r31 = 32'd0;
-
-    end
-    */
-    //////////////////////////////
 
     // =============================================================
     // Wires para debug de registros específicos (RF interno)
@@ -3760,15 +3696,163 @@ end
     // =============================================================
     // Imprimir en cada flanco de subida del reloj
     // =============================================================
-
+/*
     initial begin
     $monitor("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
              $time,
              DUT.PC_fetch,
              r5, r6, r16, r17, r18);
 end
+*/
+    wire [1:0] opcode  = DUT.instr_ID[31:30];
+    wire [3:0] cond    = DUT.instr_ID[28:25];
+    wire [2:0] opcode2 = DUT.instr_ID[24:22];
+    wire [5:0] opcode3 = DUT.instr_ID[24:19];
 
+    
+    always @(posedge clk) begin
+        // pequeño delay opcional para que se actualicen señales
+        #1;
+        $display("------------------------------------------------");
+        $write("t=%0t ns | PC=%0d | Z=%b, N=%b, C=%b, V=%b, Ci=%b CC_En control_unit", $time, DUT.PC_fetch, DUT.Z_EX, DUT.N_EX, DUT.C_EX, DUT.V_EX, DUT.Ci_to_ALU);
 
+        // Manejo de NOP
+        if (DUT.instr_ID === 32'b0) begin
+            $write("Instr=NOP ");
+        end else begin
+            case (opcode)
+                2'b00: begin 
+                    case (opcode2)
+                        3'b100: begin
+                            $write("Instr=SETHI ");
+                        end
+                        default: begin
+                            case (cond)
+                                4'b1000: $write("Instr=BA ");
+                                4'b0000: $write("Instr=BN ");
+                                4'b1001: $write("Instr=BNE ");
+                                4'b0001: $write("Instr=BE ");
+                                4'b1010: $write("Instr=BG ");
+                                4'b0010: $write("Instr=BLE ");
+                                4'b1011: $write("Instr=BGE ");
+                                4'b0011: $write("Instr=BL ");
+                                4'b1100: $write("Instr=BGU ");
+                                4'b0100: $write("Instr=BLEU ");
+                                4'b1101: $write("Instr=BCC ");
+                                4'b0101: $write("Instr=BCS ");
+                                4'b1110: $write("Instr=BPOS ");
+                                4'b0110: $write("Instr=BNEG "); 
+                                4'b1111: $write("Instr=BVC ");
+                                4'b0111: $write("Instr=BVS ");
+                                default: $write("Instr=UNKNOWN COND ");
+                            endcase
+                        end
+                    endcase
+                end
+                
+                2'b01: begin
+                    $write("Instr=CALL ");
+                end
+
+                2'b10: begin
+                    case (opcode3)
+                        // Basic Arithmetic Instructions
+                        6'b000000: $write("Instr=ADD ");
+                        6'b010000: $write("Instr=ADDCC ");
+                        6'b001000: $write("Instr=ADDX ");
+                        6'b011000: $write("Instr=ADDXCC ");
+                        6'b000100: $write("Instr=SUB ");
+                        6'b010100: $write("Instr=SUBCC ");
+                        6'b001100: $write("Instr=SUBX ");
+                        6'b011100: $write("Instr=SUBXCC ");
+
+                        // Tagged Arithmetic Instructions
+                        6'b100000: $write("Instr=TADDCC ");
+                        6'b100010: $write("Instr=TADDCCTV ");
+                        6'b100001: $write("Instr=TSUBCC ");
+                        6'b100011: $write("Instr=TSUBCCTV ");
+
+                        // Other Arithmetic Instructions
+                        6'b100101: $write("Instr=MULSCC ");
+                        6'b001010: $write("Instr=UMUL ");
+                        6'b011010: $write("Instr=UMULCC ");
+                        6'b001001: $write("Instr=SMUL ");
+                        6'b011001: $write("Instr=SMULCC ");
+                        6'b001110: $write("Instr=UDIV ");
+                        6'b011110: $write("Instr=UDIVCC ");
+                        6'b001111: $write("Instr=SDIV ");
+                        6'b011111: $write("Instr=SDIVCC ");
+
+                        // Logical Instructions
+                        6'b000001: $write("Instr=AND ");
+                        6'b010001: $write("Instr=ANDCC ");
+                        6'b000101: $write("Instr=ANDN ");
+                        6'b010101: $write("Instr=ANDNCC ");
+                        6'b000010: $write("Instr=OR ");
+                        6'b010010: $write("Instr=ORCC ");
+                        6'b000110: $write("Instr=ORN ");
+                        6'b010110: $write("Instr=ORNCC ");
+                        6'b000011: $write("Instr=XOR ");
+                        6'b010011: $write("Instr=XORCC ");
+                        6'b000111: $write("Instr=XNOR ");
+                        6'b010111: $write("Instr=XNORCC ");
+
+                        // Shift Instructions
+                        6'b100101: $write("Instr=SLL ");
+                        6'b100110: $write("Instr=SRL ");
+                        6'b100111: $write("Instr=SRA ");
+
+                        // Save and Restore Instruction Format
+                        6'b111100: $write("Instr=SAVE ");
+                        6'b111101: $write("Instr=RESTORE ");
+
+                        // JMPL Instruction
+                        6'b111000: $write("Instr=JMPL ");
+
+                        // Trap on Integer Condition Codes
+                        6'b111010: $write("Instr=TRAP ");
+
+                        // Return from Trap Instruction - RETT
+                        6'b111001: $write("Instr=RETT ");
+
+                        // Read State Register Instructions
+                        6'b101001: $write("Instr=RDPSR ");
+                        6'b101010: $write("Instr=RDWIM ");
+                        6'b101011: $write("Instr=RDTBR ");
+
+                        // Write State Register Instructions
+                        6'b110001: $write("Instr=WRPSR ");
+                        6'b110010: $write("Instr=WRWIM ");
+                        6'b110011: $write("Instr=WRTBR ");
+
+                        default:   $write("Instr=UNKNOWN (op3=%b) ", opcode3);
+                    endcase
+                end
+
+                2'b11: begin
+                    case (opcode3)
+                        6'b001001: $write("Instr=LSB ");
+                        6'b001010: $write("Instr=LDSH ");
+                        6'b000000: $write("Instr=LD ");
+                        6'b000001: $write("Instr=LDUB ");
+                        6'b000010: $write("Instr=LDUH ");
+                        6'b000011: $write("Instr=LDD ");
+                        6'b000101: $write("Instr=STB ");
+                        6'b000110: $write("Instr=STH ");
+                        6'b000100: $write("Instr=ST ");
+                        6'b000111: $write("Instr=STD ");
+                        6'b001101: $write("Instr=LDSTUB ");
+                        6'b001111: $write("Instr=SWAP ");
+                        default:   $write("Instr=LOAD/STORE OTHER ");
+                    endcase
+                end
+
+                default: begin
+                    $write("Instr=UNKNOWN OP ");
+                end
+            endcase
+        end
+    end
 /*
 initial begin
         $monitor(
@@ -3797,7 +3881,7 @@ initial begin
     // =============================================================
     reg [31:0] word56;
 
-
+/*
     initial begin
         #76;
         word56 = {
@@ -3809,7 +3893,7 @@ initial begin
 
         $display("t=%0t | DM[56] = %b", $time, word56);
     end
-
+*/
     // =============================================================
     // Terminar simulación en t=80
     // =============================================================

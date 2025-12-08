@@ -593,96 +593,97 @@ module data_memory(
     // Pre-cargar Data Memory con instrucciones
     // ==========================================
     initial begin
+        $readmemb("testcode_sparc2.txt", Memory);
 
-        // Instruction 1
-        Memory[0]  = 8'b10001010;
-        Memory[1]  = 8'b00000000;
-        Memory[2]  = 8'b00100000;
-        Memory[3]  = 8'b00111000;
+        // // Instruction 1
+        // Memory[0]  = 8'b10001010;
+        // Memory[1]  = 8'b00000000;
+        // Memory[2]  = 8'b00100000;
+        // Memory[3]  = 8'b00111000;
 
-        // Instruction 2
-        Memory[4]  = 8'b11100000;
-        Memory[5]  = 8'b01001001;
-        Memory[6]  = 8'b01000000;
-        Memory[7]  = 8'b00000000;
+        // // Instruction 2
+        // Memory[4]  = 8'b11100000;
+        // Memory[5]  = 8'b01001001;
+        // Memory[6]  = 8'b01000000;
+        // Memory[7]  = 8'b00000000;
 
-        // Instruction 3
-        Memory[8]  = 8'b11100010;
-        Memory[9]  = 8'b00001001;
-        Memory[10] = 8'b01100000;
-        Memory[11] = 8'b00000001;
+        // // Instruction 3
+        // Memory[8]  = 8'b11100010;
+        // Memory[9]  = 8'b00001001;
+        // Memory[10] = 8'b01100000;
+        // Memory[11] = 8'b00000001;
 
-        // Instruction 4
-        Memory[12] = 8'b11100100;
-        Memory[13] = 8'b00001001;
-        Memory[14] = 8'b01100000;
-        Memory[15] = 8'b00000010;
+        // // Instruction 4
+        // Memory[12] = 8'b11100100;
+        // Memory[13] = 8'b00001001;
+        // Memory[14] = 8'b01100000;
+        // Memory[15] = 8'b00000010;
 
-        // Instruction 5
-        Memory[16] = 8'b10001100;
-        Memory[17] = 8'b10000000;
-        Memory[18] = 8'b00000000;
-        Memory[19] = 8'b00010000;
+        // // Instruction 5
+        // Memory[16] = 8'b10001100;
+        // Memory[17] = 8'b10000000;
+        // Memory[18] = 8'b00000000;
+        // Memory[19] = 8'b00010000;
 
-        // Instruction 6
-        Memory[20] = 8'b00011100;
-        Memory[21] = 8'b10000000;
-        Memory[22] = 8'b00000000;
-        Memory[23] = 8'b00000101;
+        // // Instruction 6
+        // Memory[20] = 8'b00011100;
+        // Memory[21] = 8'b10000000;
+        // Memory[22] = 8'b00000000;
+        // Memory[23] = 8'b00000101;
 
-        // Instruction 7 (NOP)
-        Memory[24] = 8'b00000000;
-        Memory[25] = 8'b00000000;
-        Memory[26] = 8'b00000000;
-        Memory[27] = 8'b00000000;
+        // // Instruction 7 (NOP)
+        // Memory[24] = 8'b00000000;
+        // Memory[25] = 8'b00000000;
+        // Memory[26] = 8'b00000000;
+        // Memory[27] = 8'b00000000;
 
-        // Instruction 8
-        Memory[28] = 8'b10001100;
-        Memory[29] = 8'b00100100;
-        Memory[30] = 8'b10000000;
-        Memory[31] = 8'b00010001;
+        // // Instruction 8
+        // Memory[28] = 8'b10001100;
+        // Memory[29] = 8'b00100100;
+        // Memory[30] = 8'b10000000;
+        // Memory[31] = 8'b00010001;
 
-        // Instruction 9
-        Memory[32] = 8'b00010000;
-        Memory[33] = 8'b10000000;
-        Memory[34] = 8'b00000000;
-        Memory[35] = 8'b00000011;
+        // // Instruction 9
+        // Memory[32] = 8'b00010000;
+        // Memory[33] = 8'b10000000;
+        // Memory[34] = 8'b00000000;
+        // Memory[35] = 8'b00000011;
 
-        // Instruction 10 (NOP)
-        Memory[36] = 8'b00000000;
-        Memory[37] = 8'b00000000;
-        Memory[38] = 8'b00000000;
-        Memory[39] = 8'b00000000;
+        // // Instruction 10 (NOP)
+        // Memory[36] = 8'b00000000;
+        // Memory[37] = 8'b00000000;
+        // Memory[38] = 8'b00000000;
+        // Memory[39] = 8'b00000000;
 
-        // Instruction 11
-        Memory[40] = 8'b10001100;
-        Memory[41] = 8'b00000100;
-        Memory[42] = 8'b10000000;
-        Memory[43] = 8'b00010001;
+        // // Instruction 11
+        // Memory[40] = 8'b10001100;
+        // Memory[41] = 8'b00000100;
+        // Memory[42] = 8'b10000000;
+        // Memory[43] = 8'b00010001;
 
-        // Instruction 12
-        Memory[44] = 8'b11001100;
-        Memory[45] = 8'b00101001;
-        Memory[46] = 8'b01100000;
-        Memory[47] = 8'b00000011;
+        // // Instruction 12
+        // Memory[44] = 8'b11001100;
+        // Memory[45] = 8'b00101001;
+        // Memory[46] = 8'b01100000;
+        // Memory[47] = 8'b00000011;
 
-        // Instruction 13
-        Memory[48] = 8'b00010000;
-        Memory[49] = 8'b10000000;
-        Memory[50] = 8'b00000000;
-        Memory[51] = 8'b00000000;
+        // // Instruction 13
+        // Memory[48] = 8'b00010000;
+        // Memory[49] = 8'b10000000;
+        // Memory[50] = 8'b00000000;
+        // Memory[51] = 8'b00000000;
 
-        // Instruction 14 (NOP)
-        Memory[52] = 8'b00000000;
-        Memory[53] = 8'b00000000;
-        Memory[54] = 8'b00000000;
-        Memory[55] = 8'b00000000;
+        // // Instruction 14 (NOP)
+        // Memory[52] = 8'b00000000;
+        // Memory[53] = 8'b00000000;
+        // Memory[54] = 8'b00000000;
+        // Memory[55] = 8'b00000000;
 
-        // Instruction 15
-        Memory[56] = 8'b11111100;
-        Memory[57] = 8'b00010011;
-        Memory[58] = 8'b00100000;
-        Memory[59] = 8'b00000000;
+        // // Instruction 15
+        // Memory[56] = 8'b11111100;
+        // Memory[57] = 8'b00010011;
+        // Memory[58] = 8'b00100000;
+        // Memory[59] = 8'b00000000;
 
     end
 
@@ -999,97 +1000,98 @@ module instruction_memory (
     end
 
     initial begin
+        $readmemb("testcode_sparc2.txt", Memory);
         // -----------------------------------------------------
         // Instruction 1: 10001010 00000000 00100000 00111000
         // -----------------------------------------------------
-        Memory[0]  = 8'b10001010;
-        Memory[1]  = 8'b00000000;
-        Memory[2]  = 8'b00100000;
-        Memory[3]  = 8'b00111000;
+        // Memory[0]  = 8'b10001010;
+        // Memory[1]  = 8'b00000000;
+        // Memory[2]  = 8'b00100000;
+        // Memory[3]  = 8'b00111000;
 
-        // Instruction 2
-        Memory[4]  = 8'b11100000;
-        Memory[5]  = 8'b01001001;
-        Memory[6]  = 8'b01000000;
-        Memory[7]  = 8'b00000000;
+        // // Instruction 2
+        // Memory[4]  = 8'b11100000;
+        // Memory[5]  = 8'b01001001;
+        // Memory[6]  = 8'b01000000;
+        // Memory[7]  = 8'b00000000;
 
-        // Instruction 3
-        Memory[8]  = 8'b11100010;
-        Memory[9]  = 8'b00001001;
-        Memory[10] = 8'b01100000;
-        Memory[11] = 8'b00000001;
+        // // Instruction 3
+        // Memory[8]  = 8'b11100010;
+        // Memory[9]  = 8'b00001001;
+        // Memory[10] = 8'b01100000;
+        // Memory[11] = 8'b00000001;
 
-        // Instruction 4
-        Memory[12] = 8'b11100100;
-        Memory[13] = 8'b00001001;
-        Memory[14] = 8'b01100000;
-        Memory[15] = 8'b00000010;
+        // // Instruction 4
+        // Memory[12] = 8'b11100100;
+        // Memory[13] = 8'b00001001;
+        // Memory[14] = 8'b01100000;
+        // Memory[15] = 8'b00000010;
 
-        // Instruction 5
-        Memory[16] = 8'b10001100;
-        Memory[17] = 8'b10000000;
-        Memory[18] = 8'b00000000;
-        Memory[19] = 8'b00010000;
+        // // Instruction 5
+        // Memory[16] = 8'b10001100;
+        // Memory[17] = 8'b10000000;
+        // Memory[18] = 8'b00000000;
+        // Memory[19] = 8'b00010000;
 
-        // Instruction 6
-        Memory[20] = 8'b00011100;
-        Memory[21] = 8'b10000000;
-        Memory[22] = 8'b00000000;
-        Memory[23] = 8'b00000101;
+        // // Instruction 6
+        // Memory[20] = 8'b00011100;
+        // Memory[21] = 8'b10000000;
+        // Memory[22] = 8'b00000000;
+        // Memory[23] = 8'b00000101;
 
-        // Instruction 7
-        Memory[24] = 8'b00000000;
-        Memory[25] = 8'b00000000;
-        Memory[26] = 8'b00000000;
-        Memory[27] = 8'b00000000;
+        // // Instruction 7
+        // Memory[24] = 8'b00000000;
+        // Memory[25] = 8'b00000000;
+        // Memory[26] = 8'b00000000;
+        // Memory[27] = 8'b00000000;
 
-        // Instruction 8
-        Memory[28] = 8'b10001100;
-        Memory[29] = 8'b00100100;
-        Memory[30] = 8'b10000000;
-        Memory[31] = 8'b00010001;
+        // // Instruction 8
+        // Memory[28] = 8'b10001100;
+        // Memory[29] = 8'b00100100;
+        // Memory[30] = 8'b10000000;
+        // Memory[31] = 8'b00010001;
 
-        // Instruction 9
-        Memory[32] = 8'b00010000;
-        Memory[33] = 8'b10000000;
-        Memory[34] = 8'b00000000;
-        Memory[35] = 8'b00000011;
+        // // Instruction 9
+        // Memory[32] = 8'b00010000;
+        // Memory[33] = 8'b10000000;
+        // Memory[34] = 8'b00000000;
+        // Memory[35] = 8'b00000011;
 
-        // Instruction 10
-        Memory[36] = 8'b00000000;
-        Memory[37] = 8'b00000000;
-        Memory[38] = 8'b00000000;
-        Memory[39] = 8'b00000000;
+        // // Instruction 10
+        // Memory[36] = 8'b00000000;
+        // Memory[37] = 8'b00000000;
+        // Memory[38] = 8'b00000000;
+        // Memory[39] = 8'b00000000;
 
-        // Instruction 11
-        Memory[40] = 8'b10001100;
-        Memory[41] = 8'b00000100;
-        Memory[42] = 8'b10000000;
-        Memory[43] = 8'b00010001;
+        // // Instruction 11
+        // Memory[40] = 8'b10001100;
+        // Memory[41] = 8'b00000100;
+        // Memory[42] = 8'b10000000;
+        // Memory[43] = 8'b00010001;
 
-        // Instruction 12
-        Memory[44] = 8'b11001100;
-        Memory[45] = 8'b00101001;
-        Memory[46] = 8'b01100000;
-        Memory[47] = 8'b00000011;
+        // // Instruction 12
+        // Memory[44] = 8'b11001100;
+        // Memory[45] = 8'b00101001;
+        // Memory[46] = 8'b01100000;
+        // Memory[47] = 8'b00000011;
 
-        // Instruction 13
-        Memory[48] = 8'b00010000;
-        Memory[49] = 8'b10000000;
-        Memory[50] = 8'b00000000;
-        Memory[51] = 8'b00000000;
+        // // Instruction 13
+        // Memory[48] = 8'b00010000;
+        // Memory[49] = 8'b10000000;
+        // Memory[50] = 8'b00000000;
+        // Memory[51] = 8'b00000000;
 
-        // Instruction 14
-        Memory[52] = 8'b00000000;
-        Memory[53] = 8'b00000000;
-        Memory[54] = 8'b00000000;
-        Memory[55] = 8'b00000000;
+        // // Instruction 14
+        // Memory[52] = 8'b00000000;
+        // Memory[53] = 8'b00000000;
+        // Memory[54] = 8'b00000000;
+        // Memory[55] = 8'b00000000;
 
-        // Instruction 15
-        Memory[56] = 8'b11111100;
-        Memory[57] = 8'b00010011;
-        Memory[58] = 8'b00100000;
-        Memory[59] = 8'b00000000;
+        // // Instruction 15
+        // Memory[56] = 8'b11111100;
+        // Memory[57] = 8'b00010011;
+        // Memory[58] = 8'b00100000;
+        // Memory[59] = 8'b00000000;
     end
 endmodule
 
@@ -3004,9 +3006,6 @@ end
     );
 endmodule
 
-
-`timescale 1ns/1ps
-
 module sparc_tb();
 
     reg clk;
@@ -3020,250 +3019,143 @@ module sparc_tb();
         .reset(reset)
     );
 
-    // ============================
-    // Generación del reloj (toggle cada 2)
-    // ============================
-    initial begin
-        clk = 1'b0;
-        forever #2 clk = ~clk;
-    end
-
-    // ============================
-    // Reset: 1 → 0 en t = 3
-    // ============================
-    initial begin
-        reset = 1'b1;
-        #3 reset = 1'b0;
-    end
-
-
-    
-
-    
-
     // =============================================================
-    // Wires para debug de registros específicos (RF interno)
+    // Wires importantes
     // =============================================================
+    wire signed [31:0] r1  = DUT.ID.REG_FILE.r1;
+    wire signed [31:0] r2  = DUT.ID.REG_FILE.r2;
+    wire signed [31:32] r3 = DUT.ID.REG_FILE.r3;
+    wire signed [31:0] r4  = DUT.ID.REG_FILE.r4;
     wire signed [31:0] r5  = DUT.ID.REG_FILE.r5;
     wire signed [31:0] r6  = DUT.ID.REG_FILE.r6;
+    wire signed [31:0] r8  = DUT.ID.REG_FILE.r8;
+    wire signed [31:0] r10 = DUT.ID.REG_FILE.r10;
+    wire signed [31:0] r11 = DUT.ID.REG_FILE.r11;
+    wire signed [31:0] r12 = DUT.ID.REG_FILE.r12;
+    wire signed [31:0] r15 = DUT.ID.REG_FILE.r15;
     wire signed [31:0] r16 = DUT.ID.REG_FILE.r16;
     wire signed [31:0] r17 = DUT.ID.REG_FILE.r17;
     wire signed [31:0] r18 = DUT.ID.REG_FILE.r18;
 
-    // =============================================================
-    // Imprimir en cada flanco de subida del reloj
-    // =============================================================
+    integer i;
 
+    // ============================================
+    // Inicialización de reloj
+    // ============================================
     initial begin
-    $monitor("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
-             $time,
-             DUT.PC_fetch,
-             r5, r6, r16, r17, r18);
-end
-
-    wire [1:0] opcode  = DUT.instr_ID[31:30];
-    wire [3:0] cond    = DUT.instr_ID[28:25];
-    wire [2:0] opcode2 = DUT.instr_ID[24:22];
-    wire [5:0] opcode3 = DUT.instr_ID[24:19];
-
-    /*
-    always @(posedge clk) begin
-        // pequeño delay opcional para que se actualicen señales
-        
-        //$display("------------------------------------------------");
-        //$write("t=%0t ns | PC=%0d | Z=%b, N=%b, C=%b, V=%b, Ci=%b ", $time, DUT.PC_fetch, DUT.Z_EX, DUT.N_EX, DUT.C_EX, DUT.V_EX, DUT.Ci_to_ALU);
-
-        // Manejo de NOP
-        if (DUT.instr_ID === 32'b0) begin
-            $write("Instr=NOP ");
-        end else begin
-            case (opcode)
-                2'b00: begin 
-                    case (opcode2)
-                        3'b100: begin
-                            $write("Instr=SETHI ");
-                        end
-                        default: begin
-                            case (cond)
-                                4'b1000: $write("Instr=BA ");
-                                4'b0000: $write("Instr=BN ");
-                                4'b1001: $write("Instr=BNE ");
-                                4'b0001: $write("Instr=BE ");
-                                4'b1010: $write("Instr=BG ");
-                                4'b0010: $write("Instr=BLE ");
-                                4'b1011: $write("Instr=BGE ");
-                                4'b0011: $write("Instr=BL ");
-                                4'b1100: $write("Instr=BGU ");
-                                4'b0100: $write("Instr=BLEU ");
-                                4'b1101: $write("Instr=BCC ");
-                                4'b0101: $write("Instr=BCS ");
-                                4'b1110: $write("Instr=BPOS ");
-                                4'b0110: $write("Instr=BNEG "); 
-                                4'b1111: $write("Instr=BVC ");
-                                4'b0111: $write("Instr=BVS ");
-                                default: $write("Instr=UNKNOWN COND ");
-                            endcase
-                        end
-                    endcase
-                end
-                
-                2'b01: begin
-                    $write("Instr=CALL ");
-                end
-
-                2'b10: begin
-                    case (opcode3)
-                        // Basic Arithmetic Instructions
-                        6'b000000: $write("Instr=ADD ");
-                        6'b010000: $write("Instr=ADDCC ");
-                        6'b001000: $write("Instr=ADDX ");
-                        6'b011000: $write("Instr=ADDXCC ");
-                        6'b000100: $write("Instr=SUB ");
-                        6'b010100: $write("Instr=SUBCC ");
-                        6'b001100: $write("Instr=SUBX ");
-                        6'b011100: $write("Instr=SUBXCC ");
-
-                        // Tagged Arithmetic Instructions
-                        6'b100000: $write("Instr=TADDCC ");
-                        6'b100010: $write("Instr=TADDCCTV ");
-                        6'b100001: $write("Instr=TSUBCC ");
-                        6'b100011: $write("Instr=TSUBCCTV ");
-
-                        // Other Arithmetic Instructions
-                        6'b100101: $write("Instr=MULSCC ");
-                        6'b001010: $write("Instr=UMUL ");
-                        6'b011010: $write("Instr=UMULCC ");
-                        6'b001001: $write("Instr=SMUL ");
-                        6'b011001: $write("Instr=SMULCC ");
-                        6'b001110: $write("Instr=UDIV ");
-                        6'b011110: $write("Instr=UDIVCC ");
-                        6'b001111: $write("Instr=SDIV ");
-                        6'b011111: $write("Instr=SDIVCC ");
-
-                        // Logical Instructions
-                        6'b000001: $write("Instr=AND ");
-                        6'b010001: $write("Instr=ANDCC ");
-                        6'b000101: $write("Instr=ANDN ");
-                        6'b010101: $write("Instr=ANDNCC ");
-                        6'b000010: $write("Instr=OR ");
-                        6'b010010: $write("Instr=ORCC ");
-                        6'b000110: $write("Instr=ORN ");
-                        6'b010110: $write("Instr=ORNCC ");
-                        6'b000011: $write("Instr=XOR ");
-                        6'b010011: $write("Instr=XORCC ");
-                        6'b000111: $write("Instr=XNOR ");
-                        6'b010111: $write("Instr=XNORCC ");
-
-                        // Shift Instructions
-                        6'b100101: $write("Instr=SLL ");
-                        6'b100110: $write("Instr=SRL ");
-                        6'b100111: $write("Instr=SRA ");
-
-                        // Save and Restore Instruction Format
-                        6'b111100: $write("Instr=SAVE ");
-                        6'b111101: $write("Instr=RESTORE ");
-
-                        // JMPL Instruction
-                        6'b111000: $write("Instr=JMPL ");
-
-                        // Trap on Integer Condition Codes
-                        6'b111010: $write("Instr=TRAP ");
-
-                        // Return from Trap Instruction - RETT
-                        6'b111001: $write("Instr=RETT ");
-
-                        // Read State Register Instructions
-                        6'b101001: $write("Instr=RDPSR ");
-                        6'b101010: $write("Instr=RDWIM ");
-                        6'b101011: $write("Instr=RDTBR ");
-
-                        // Write State Register Instructions
-                        6'b110001: $write("Instr=WRPSR ");
-                        6'b110010: $write("Instr=WRWIM ");
-                        6'b110011: $write("Instr=WRTBR ");
-
-                        default:   $write("Instr=UNKNOWN (op3=%b) ", opcode3);
-                    endcase
-                end
-
-                2'b11: begin
-                    case (opcode3)
-                        6'b001001: $write("Instr=LSB ");
-                        6'b001010: $write("Instr=LDSH ");
-                        6'b000000: $write("Instr=LD ");
-                        6'b000001: $write("Instr=LDUB ");
-                        6'b000010: $write("Instr=LDUH ");
-                        6'b000011: $write("Instr=LDD ");
-                        6'b000101: $write("Instr=STB ");
-                        6'b000110: $write("Instr=STH ");
-                        6'b000100: $write("Instr=ST ");
-                        6'b000111: $write("Instr=STD ");
-                        6'b001101: $write("Instr=LDSTUB ");
-                        6'b001111: $write("Instr=SWAP ");
-                        default:   $write("Instr=LOAD/STORE OTHER ");
-                    endcase
-                end
-
-                default: begin
-                    $write("Instr=UNKNOWN OP ");
-                end
-            endcase
-        end
+        clk = 0;
+        forever #2 clk = ~clk;
     end
-*/
-/*
-initial begin
+
+    // ====================================
+    // Inicialización de reset
+    // ====================================
+    initial begin
+        reset = 1;
+        #3 reset = 0;
+    end
+
+    // =============================================================
+    // SELECCIÓN DE TEST
+    // =============================================================
+
+`ifdef debugging
+    initial begin
         $monitor(
-            "PC = %d\n\
-            ALU_OUT     = %d\n\
-            DI          = %d\n\
-            Address   = %d\n\
-            D_MUX_OUT   = %d\n\
-            ALU_A   = %d\n\
-            ALU_B   = %d\n\
-            ALU_OP   = %d\n\
-            size   = %0b\n\
-            RW =     %0b\n\
-            E =      %b\n",
-            
-            DUT.PC_fetch,
-            DUT.ALU_Out_EX2,
-            DUT.DI,
-            DUT.alu_result_in,
-            DUT.MEM.data_mux_out,
-            DUT.A_EX2,
-            DUT.SOH_out,
-            DUT.ALU_OP,
-            DUT.mem_ctrl_in[8:7],
-            DUT.mem_ctrl_in[6],
-            DUT.mem_ctrl_in[5]
+            { "==== debugging ==== \n",
+            "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+            "r5=%0d r6=%0d r16=%0d r17=%0d r18=%0d\n"
+            },
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r5, r6, r16, r17, r18
         );
     end
-*/
-    // =============================================================
-    // Leer palabra en DM[56] en t ≈ 76
-    // =============================================================
-    reg [31:0] word56;
-
 
     initial begin
         #76;
-        word56 = {
+        $display("DM[56 to 59] = %b %b %b %b",
             DUT.MEM.data_memory_inst.Memory[56],
             DUT.MEM.data_memory_inst.Memory[57],
             DUT.MEM.data_memory_inst.Memory[58],
             DUT.MEM.data_memory_inst.Memory[59]
-        };
-
-        $display("t=%0t | DM[56] = %b", $time, word56);
+        );
     end
 
-    // =============================================================
-    // Terminar simulación en t=80
-    // =============================================================
     initial begin
-        #80;
+        #80 $finish;
+    end
+
+`elsif sparc1
+    initial begin
+        $monitor(
+            { "==== testcode_sparc1 ====\n",
+              "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "r1=%0d r2=%0d r3=%0d r5=%0d\n"
+            },
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r1, r2, r3, r5
+        );
+    end
+
+    initial begin
+        #160;
+        $display("DM[44-47] = %b %b %b %b",
+            DUT.MEM.data_memory_inst.Memory[44],
+            DUT.MEM.data_memory_inst.Memory[45],
+            DUT.MEM.data_memory_inst.Memory[46],
+            DUT.MEM.data_memory_inst.Memory[47]
+        );
+    end
+
+    initial begin
+        #164 $finish;
+    end
+
+`elsif sparc2
+    initial begin
+        $monitor(
+            { "==== sparc2 ====\n",
+              "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "r1=%0d r2=%0d r3=%0d\n",
+              "r4=%0d r5=%0d r8=%0d\n",
+              "r10=%0d r11=%0d\n",
+              "r12=%0d r15=%0d\n"
+            },
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r1, r2, r3,
+            r4, r5, r8,
+            r10, r11,
+            r12, r15
+        );
+    end
+
+    initial begin
+        #240;
+        for (i = 224; i < 264; i = i + 4) begin
+            $display("D[%0d]= %b, D[%0d]= %b, D[%0d]= %b, D[%0d]= %b",
+                i,
+                DUT.MEM.data_memory_inst.Memory[i],
+                i+1,
+                DUT.MEM.data_memory_inst.Memory[i+1],
+                i+2,
+                DUT.MEM.data_memory_inst.Memory[i+2],
+                i+3,
+                DUT.MEM.data_memory_inst.Memory[i+3]
+            );
+        end
+    end
+
+    initial begin
+        #244 $finish;
+    end
+`else
+    initial begin
+        $display("ERROR: use command \"iverilog -Ddebugging\" Define debugging, testcode_sparc1 or sparc2");
         $finish;
     end
+`endif
 
 endmodule

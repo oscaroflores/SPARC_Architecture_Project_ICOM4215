@@ -561,45 +561,8 @@ module data_memory(
                 end
                 default: DO = 32'b0;
             endcase
-/*
-            // Debug: lectura
-            $display("DATA_MEM READ  @t=%0t | A=%0d Size=%b RW=%b E=%b SIGN_EXT=%b",
-                     $time, A, Size, RW, E, SIGN_EXT);
-            $display("   Bytes crudos: M[A]=%d M[A+1]=%d M[A+2]=%d M[A+3]=%d",
-                     Memory[A], Memory[A+1], Memory[A+2], Memory[A+3]);
-            $display("   DO (resultado) = %d\n", DO);
-        
-        end
 
-        // =========================
-        // WRITE (STORE)
-        // =========================
-        else if (RW && E) begin
-            case (Size)
-                2'b00: begin
-                    // STORE BYTE (DI[7:0])
-                    Memory[A] = DI[7:0];
-                end
-                2'b01: begin
-                    // STORE HALFWORD (DI[15:8] alto, DI[7:0] bajo)
-                    Memory[A]   = DI[15:8];
-                    Memory[A+1] = DI[7:0];
-                end
-                2'b10: begin
-                    // STORE WORD (big-endian)
-                    Memory[A]   = DI[31:24];
-                    Memory[A+1] = DI[23:16];
-                    Memory[A+2] = DI[15:8];
-                    Memory[A+3] = DI[7:0];
-                end
-                default:  sin cambio */;
-            
-/*
-            // Debug: escritura
-            $display("DATA_MEM WRITE @t=%0t | A=%0d Size=%b RW=%b E=%b",
-                     $time, A, Size, RW, E);
-            $display("   DI (entrada)   = %h\n", DI);
-            */
+           
         end
     end
     // ==========================================
@@ -2337,10 +2300,7 @@ module decoding_stage_path #(
     output wire                     carry_out,    // Va para el alu en EX stage
     output wire [31:0]              id_ctrl_out
 );
-    always @(posedge clk) begin
-    $display("ex ctrl in : %b", ex_ctrl_in);
-    $display("id ctrl out: %b", id_ctrl_out);
-end
+    
 
     // ------------------------------------------------------------
     // Internal wires / señales auxiliares
@@ -2445,7 +2405,7 @@ end
     wire [3:0] CCR_out_muxed;
     CCR u_CCR (
         .CC_EN(ex_ctrl_in[17]),
-        .ICC(CC_EX),
+        .ICC(ALU_CC),
         .clock(clk),
         .rst(reset),
         .CC_OUT(CCR_out),
@@ -2454,11 +2414,19 @@ end
 
     TwoToOneMux #(.WIDTH(4)) ccr_mux (
         .in0 (CCR_out),
-        .in1 (CC_EX),
+        .in1 (ALU_CC),
         .sel (ex_ctrl_in[17]),
         .out (CCR_out_muxed)
     );
-
+    /*
+    always @(posedge clk) begin
+    $display("CCR ICC : %b",ALU_CC);
+    $display("CCR out(ACC): %b", CCR_out);
+    $display("CCR out del mux: %b", CCR_out_muxed);
+     $display("CC_EN: %b", ex_ctrl_in[17]);
+     
+end
+*/
     // ------------------------------------------------------------
     // CH: condition handler (combinacional) -> produce J (branch taken)
     // CH expects: BI, cond, ACC[3:0] -> J
@@ -2510,343 +2478,7 @@ end
 
 endmodule
 
-/*
-`timescale 1ns / 1ps
 
-module tb_decoding_stage_path;
-
-    // ============================
-    // DUT inputs
-    // ============================
-    reg         clk;
-    reg         reset;
-
-    reg  [8:0]  B_PC_ID;
-    reg  [31:0] instr_ID;
-
-    // Forwarding / later stages
-    reg  [31:0] ALU_Out_EX;
-    reg  [31:0] data_mem_mux;
-    reg  [31:0] PW_WB;
-    reg  [4:0]  RW_WB;
-    reg         RF_LE_WB;
-    reg         NOP;
-    reg         LE_DHDU;      // not used inside, but drive it anyway
-
-    // CCR / control
-    reg  [3:0]  ALU_CC;
-    reg  [31:0] ex_ctrl_in;
-
-    // DHDU selects
-    reg  [1:0]  A_S;
-    reg  [1:0]  B_S;
-    reg  [1:0]  D_S;
-
-    // ============================
-    // DUT outputs
-    // ============================
-    wire [31:0] A_src;
-    wire [31:0] B_src;
-    wire [31:0] D_src;
-    wire [31:0] instr_EX;
-    wire [8:0]  TA;
-    wire        J;
-    wire        carry_out;
-    wire [31:0] id_ctrl_out;
-
-    // ============================
-    // Device Under Test
-    // ============================
-    decoding_stage_path #(
-        .ADDR_WIDTH(9),
-        .RESET_PC(9'd0),
-        .RESET_nPC(9'd4)
-    ) DUT (
-        .clk        (clk),
-        .reset      (reset),
-
-        .B_PC_ID    (B_PC_ID),
-        .instr_ID   (instr_ID),
-
-        .ALU_Out_EX (ALU_Out_EX),
-        .data_mem_mux (data_mem_mux),
-        .PW_WB      (PW_WB),
-        .RW_WB      (RW_WB),
-        .RF_LE_WB   (RF_LE_WB),
-        .NOP        (NOP),
-        .LE_DHDU    (LE_DHDU),
-
-        .ALU_CC     (ALU_CC),
-        .ex_ctrl_in (ex_ctrl_in),
-
-        .A_S        (A_S),
-        .B_S        (B_S),
-        .D_S        (D_S),
-
-        .A_src      (A_src),
-        .B_src      (B_src),
-        .D_src      (D_src),
-        .instr_EX   (instr_EX),
-        .TA         (TA),
-        .J          (J),
-        .carry_out  (carry_out),
-        .id_ctrl_out(id_ctrl_out)
-    );
-
-    // ============================================================
-    // Clock generation: 4ns period (rising at 2, 6, 10, ...)
-    // ============================================================
-    initial begin
-        clk = 1'b0;
-        forever #2 clk = ~clk;
-    end
-
-    // ============================================================
-    // Helper: build a fake "R-type" instruction with rd, rs1, rs2
-    // NOTE: This only cares about the register fields used by ID:
-    //   RD = bits [29:25]
-    //   RS1 = bits [18:14]
-    //   RS2 = bits [4:0]
-    // The rest of the bits are left as 0.
-    // ============================================================
-    function [31:0] make_reg_instr;
-        input [4:0] rd;
-        input [4:0] rs1;
-        input [4:0] rs2;
-        reg   [31:0] tmp;
-    begin
-        tmp             = 32'b0;
-        tmp[29:25]      = rd;
-        tmp[18:14]      = rs1;
-        tmp[4:0]        = rs2;
-        make_reg_instr  = tmp;
-    end
-    endfunction
-
-    // ============================================================
-    // Helper: write one register via WB interface
-    // NOTE: In your current decoding_stage_path, the RF LE is hardwired
-    //       to 1'b1 inside REG_FILE, so RF_LE_WB is ignored.
-    //       Here we treat writes as "any posedge with RW_WB & PW_WB set".
-    // ============================================================
-    task write_reg;
-        input [4:0]  rw;
-        input [31:0] data;
-    begin
-        @(negedge clk);
-        RW_WB <= rw;
-        PW_WB <= data;
-        // LE is effectively 1'b1 inside REG_FILE
-        @(posedge clk);
-        #1;  // small delay to allow write to settle
-        // After writing, we can move writes to register 0 so we don't
-        // keep overwriting others each cycle.
-        RW_WB <= 5'd0;
-        PW_WB <= 32'h0000_0000;
-    end
-    endtask
-
-    // ============================================================
-    // Main stimulus
-    // Phases:
-    //  1) Reset + defaults
-    //  2) Write a few registers via WB and read them (no forwarding)
-    //  3) Exercise forwarding muxes (A_S/B_S/D_S)
-    //  4) Test NOP signal on control (id_ctrl_out -> 0)
-    //  5) Simple CCR/CH behavior example (manual observation)
-    // ============================================================
-    initial begin
-        // ============================
-        // Phase 0: default values
-        // ============================
-        B_PC_ID      = 9'd0;
-        instr_ID     = 32'd0;
-
-        ALU_Out_EX   = 32'hAAAA_BBBB;
-        data_mem_mux = 32'hCCCC_DDDD;
-        PW_WB        = 32'hEEEE_FFFF;
-        RW_WB        = 5'd0;
-        RF_LE_WB     = 1'b1;      // not used inside, but set it
-
-        NOP          = 1'b0;
-        LE_DHDU      = 1'b1;
-
-        ALU_CC       = 4'b0000;
-        ex_ctrl_in   = 32'd0;
-
-        A_S          = 2'b00;
-        B_S          = 2'b00;
-        D_S          = 2'b00;
-
-        // ============================
-        // Phase 1: reset
-        // ============================
-        reset = 1'b1;
-        #5;
-        reset = 1'b0;
-
-        $display("=== Start of decoding_stage_path test ===");
-
-        // ============================
-        // Phase 2: write some registers via WB
-        // ============================
-        $display("\n[Phase 2] Writing registers via WB interface...");
-
-        // Write R1, R2, R3
-        write_reg(5'd1, 32'h1111_1111);
-        write_reg(5'd2, 32'h2222_2222);
-        write_reg(5'd3, 32'h3333_3333);
-
-        // ============================
-        // Now select them via RA/RB/RD using instr_ID
-        // RA = 1, RB = 2, RD = 3
-        // A_src <- R1, B_src <- R2, D_src <- R3 when A_S=B_S=D_S=0
-        // ============================
-        instr_ID = make_reg_instr(5'd3, 5'd1, 5'd2);
-        B_PC_ID  = 9'd100;   // arbitrary PC for TAG
-
-        A_S = 2'b00;
-        B_S = 2'b00;
-        D_S = 2'b00;
-
-        @(posedge clk);
-        #1;  // allow combinational logic to settle
-
-        $display("[Phase 2] No forwarding (A_S=B_S=D_S=00)");
-        $display("  Expected: A_src=R1=0x11111111, B_src=R2=0x22222222, D_src=R3=0x33333333");
-        $display("  Got      A_src=%h B_src=%h D_src=%h", A_src, B_src, D_src);
-
-        if (A_src !== 32'h1111_1111)
-            $display("  **ERROR: A_src mismatch**");
-        if (B_src !== 32'h2222_2222)
-            $display("  **ERROR: B_src mismatch**");
-        if (D_src !== 32'h3333_3333)
-            $display("  **ERROR: D_src mismatch**");
-
-        // ============================
-        // Phase 3: Forwarding muxes
-        // ============================
-        $display("\n[Phase 3] Testing forwarding muxes A/B/D...");
-
-        // We'll keep RA/RB/RD as before, but change selects and upstream data.
-        ALU_Out_EX   = 32'hAAAA_BBBB;
-        data_mem_mux = 32'hCCCC_DDDD;
-        PW_WB        = 32'hEEEE_FFFF;
-
-        // --- sel = 01 -> ALU_Out_EX ---
-        A_S = 2'b01;
-        B_S = 2'b01;
-        D_S = 2'b01;
-        @(posedge clk); #1;
-        $display("  sel=01 (ALU_Out_EX): A_src=%h B_src=%h D_src=%h (expected AAAA_BBBB)", 
-                 A_src, B_src, D_src);
-
-        // --- sel = 10 -> data_mem_mux ---
-        A_S = 2'b10;
-        B_S = 2'b10;
-        D_S = 2'b10;
-        @(posedge clk); #1;
-        $display("  sel=10 (data_mem_mux): A_src=%h B_src=%h D_src=%h (expected CCCC_DDDD)",
-                 A_src, B_src, D_src);
-
-        // --- sel = 11 -> PW_WB ---
-        A_S = 2'b11;
-        B_S = 2'b11;
-        D_S = 2'b11;
-        @(posedge clk); #1;
-        $display("  sel=11 (PW_WB): A_src=%h B_src=%h D_src=%h (expected EEEE_FFFF)",
-                 A_src, B_src, D_src);
-
-        // ============================
-        // Phase 4: NOP test (control_unit gating)
-        // ============================
-        $display("\n[Phase 4] Testing NOP gating on control signals (NOP_mux_CU)...");
-
-        // First, NOP = 0 (normal operation)
-        NOP = 1'b0;
-        @(posedge clk); #1;
-        $display("  NOP=0  -> id_ctrl_out=%h, J=%b (from real control_unit)", id_ctrl_out, J);
-
-        // Then NOP = 1 (control_signals should be forced to 0)
-        NOP = 1'b1;
-        @(posedge clk); #1;
-        $display("  NOP=1  -> id_ctrl_out=%h, J=%b (expected id_ctrl_out=0)", id_ctrl_out, J);
-        if (id_ctrl_out !== 32'd0)
-            $display("  **ERROR: id_ctrl_out not zero under NOP=1**");
-
-        // ============================
-        // Phase 5: Simple CCR / CH example
-        // NOTE: This depends on your control_unit + CH implementation.
-        // Here we just show how to drive it so you can inspect J / carry_out.
-        // ============================
-        $display("\n[Phase 5] Simple CCR/CH observation...");
-
-        NOP      = 1'b0;   // allow real control_signals
-        ALU_CC   = 4'b0010; // e.g., set Z flag or something per your design
-
-        // Build an "instruction" with some cond bits in [28:25]
-        //   For example: cond = 4'b1000 (often 'always' in SPARC),
-        //   but adjust according to your CH encoding.
-        instr_ID = make_reg_instr(5'd3, 5'd1, 5'd2);
-        instr_ID[28:25] = 4'b1000; // overwrite cond field
-
-        @(posedge clk); #1;
-        $display("  After ALU_CC=%b, cond=%b -> carry_out=%b, J=%b, CCR/CH behavior depends on your logic.",
-                 ALU_CC, instr_ID[28:25], carry_out, J);
-        $display("  id_ctrl_out=%h", id_ctrl_out);
-
-        // At this point, you should open the waveform and:
-        //  - Inspect CCR_out inside DUT.u_CCR
-        //  - Inspect ACC input to CH and J output
-        //  - See how id_ctrl_out[17] (CC_EN) affects CCR updates
-
-        // ============================
-        // Done
-        // ============================
-        #20;
-        $display("\n=== End of decoding_stage_path test ===");
-        $finish;
-    end
-
-    // ============================================================
-    // Continuous monitoring (optional, helps see what is happening)
-    // ============================================================
-    
-    initial begin
-        $display("\nTime | instr_ID          | RA RB RD | A_src       B_src       D_src       | TA   J carry id_ctrl_out");
-        $monitor("t=%0t | %h | %2d %2d %2d | %h %h %h | %3d  %b   %b   %h",
-                 $time,
-                 instr_ID,
-                 instr_ID[18:14], instr_ID[4:0], instr_ID[29:25],
-                 A_src, B_src, D_src,
-                 TA, J, carry_out, id_ctrl_out);
-    end
-    
-        // ============================================================
-    // Extra RF debug: show R5, R6, R16, R17, R18 every cycle
-    // ============================================================
-    initial begin
-        $display("\nTime | R5         R6         R16        R17        R18");
-        forever begin
-            @(posedge clk);
-            #1; // small delay to let write settle
-            $display("t=%0t | %h %h %h %h %h %h %h %h",
-                     $time,
-                     DUT.REG_FILE.r1,
-                     DUT.REG_FILE.r2,
-                     DUT.REG_FILE.r3,
-                     DUT.REG_FILE.r5,
-                     DUT.REG_FILE.r6,
-                     DUT.REG_FILE.r16,
-                     DUT.REG_FILE.r17,
-                     DUT.REG_FILE.r18);
-        end
-    end
-
-
-endmodule
-
-*/
 
 
 //////////////////////////////////////////
@@ -2893,252 +2525,6 @@ assign rd_out       = rd_in;
 
 endmodule
 
-/*
-`timescale 1ns / 1ps
-
-module tb_memory_stage_path;
-
-    // ============================
-    // DUT inputs
-    // ============================
-    reg [31:0] alu_result_in;
-    reg [31:0] mem_ctrl_in;
-    reg [4:0]  rd_in;
-    reg [31:0] DI;
-
-    // ============================
-    // DUT outputs
-    // ============================
-    wire [31:0] data_mux_out;
-    wire [31:0] mem_ctrl_out;
-    wire [4:0]  rd_out;
-
-    // ============================
-    // Device Under Test
-    // ============================
-    memory_stage_path DUT (
-        .alu_result_in (alu_result_in),
-        .mem_ctrl_in   (mem_ctrl_in),
-        .rd_in         (rd_in),
-        .DI            (DI),
-
-        .data_mux_out  (data_mux_out),
-        .mem_ctrl_out  (mem_ctrl_out),
-        .rd_out        (rd_out)
-    );
-
-    // ============================
-    // Convenience: decode control bits
-    // (for prints, not needed by DUT)
-    // ============================
-    wire [1:0] Size = mem_ctrl_in[8:7];
-    wire       RW   = mem_ctrl_in[6];
-    wire       E    = mem_ctrl_in[5];
-    wire       L    = mem_ctrl_in[4];
-
-    // ============================
-    // Helper: set mem_ctrl_in
-    // ============================
-    // Size: 2'b00 = byte, 2'b01 = halfword, 2'b10 = word (per your data_memory)
-    // RW:   0 = read, 1 = write
-    // E:    enable (used for writes)
-    // L:    load to RF? (controls ALU vs memory in data_mux_out)
-    task set_ctrl;
-        input [1:0] size;
-        input       rw;
-        input       e;
-        input       l;
-    begin
-        mem_ctrl_in = 32'b0;
-        mem_ctrl_in[8:7] = size;
-        mem_ctrl_in[6]   = rw;
-        mem_ctrl_in[5]   = e;
-        mem_ctrl_in[4]   = l;
-    end
-    endtask
-
-    // ============================
-    // Helper checkers
-    // ============================
-    task check_ctrl_pass;
-    begin
-        if (mem_ctrl_out !== mem_ctrl_in) begin
-            $display("**ERROR: mem_ctrl_out != mem_ctrl_in. mem_ctrl_out=%h mem_ctrl_in=%h",
-                     mem_ctrl_out, mem_ctrl_in);
-        end
-        if (rd_out !== rd_in) begin
-            $display("**ERROR: rd_out != rd_in. rd_out=%0d rd_in=%0d", rd_out, rd_in);
-        end
-    end
-    endtask
-
-    // For comparing values, print both expected & actual
-    task check_value;
-        input [31:0] expected;
-        input [31:0] actual;
-        input [256*8-1:0] msg;
-    begin
-        if (actual !== expected) begin
-            $display("**ERROR: %s. Expected=%h, Got=%h", msg, expected, actual);
-        end else begin
-            $display("  OK: %s. Value=%h", msg, actual);
-        end
-    end
-    endtask
-
-    // ============================
-    // Main stimulus
-    // ============================
-    initial begin
-        $display("=== Start of memory_stage_path test ===");
-
-        // Default
-        alu_result_in = 32'd0;
-        mem_ctrl_in   = 32'd0;
-        rd_in         = 5'd0;
-        DI            = 32'd0;
-
-        #5;
-
-        // -----------------------------------------
-        // Phase 1: No memory access, L=0 (ALU passthrough)
-        // -----------------------------------------
-        $display("\n[Phase 1] ALU passthrough when L=0 (no load)");
-
-        alu_result_in = 32'hAAAA_BBBB;
-        rd_in         = 5'd10;
-        set_ctrl(2'b00, 1'b0, 1'b0, 1'b0); // Size=byte, RW=read, E=0, L=0
-        #1;
-
-        check_ctrl_pass();
-        check_value(32'hAAAA_BBBB, data_mux_out, "L=0: data_mux_out should be alu_result_in");
-
-        // -----------------------------------------
-        // Phase 2: Word write & read (Size=10)
-        // -----------------------------------------
-        $display("\n[Phase 2] Word write & read (Size=2'b10)");
-
-        // Write a word at address 0x10
-        alu_result_in = 32'h0000_0010;   // address (lower 9 bits used by memory)
-        DI            = 32'hDEAD_BEEF;   // data to write
-        rd_in         = 5'd3;
-
-        // Write: Size=word(10), RW=1, E=1, L=0
-        set_ctrl(2'b10, 1'b1, 1'b1, 1'b0);
-        #1;   // allow write to occur
-
-        check_ctrl_pass();
-        // For a pure write, data_mux_out = alu_result_in because L=0:
-        check_value(alu_result_in, data_mux_out, "Word write: with L=0, data_mux_out should be alu_result_in");
-
-        // Now read back: Size=word(10), RW=0, E=1, and set L=1 so mux chooses memory output
-        set_ctrl(2'b10, 1'b0, 1'b1, 1'b1);
-        #1;
-
-        check_ctrl_pass();
-        check_value(32'hDEAD_BEEF, data_mux_out, "Word read: data_mux_out should return stored 0xDEADBEEF");
-
-        // -----------------------------------------
-        // Phase 3: Halfword write & read (Size=01)
-        // -----------------------------------------
-        $display("\n[Phase 3] Halfword write & read (Size=2'b01)");
-
-        // Write a halfword at address 0x20
-        alu_result_in = 32'h0000_0020;
-        DI            = 32'h0000_ABCD;   // Only low 16 bits are relevant
-        rd_in         = 5'd7;
-
-        // Write: Size=halfword(01), RW=1, E=1, L=0
-        set_ctrl(2'b01, 1'b1, 1'b1, 1'b0);
-        #1;
-
-        check_ctrl_pass();
-        check_value(alu_result_in, data_mux_out, "Halfword write: L=0, data_mux_out should be alu_result_in");
-
-        // Read back: Size=halfword(01), RW=0, E=1, L=1
-        set_ctrl(2'b01, 1'b0, 1'b1, 1'b1);
-        #1;
-
-        check_ctrl_pass();
-        // With your data_memory coding:
-        //   Memory[A]   = DI[15:8] = 0xAB
-        //   Memory[A+1] = DI[7:0]  = 0xCD
-        // Read case: {16'b0, Memory[A], Memory[A+1]} => 0x0000_ABCD
-        check_value(32'h0000_ABCD, data_mux_out, "Halfword read: should get 0x0000ABCD");
-
-        // -----------------------------------------
-        // Phase 4: Byte write & read (Size=00)
-        // -----------------------------------------
-        $display("\n[Phase 4] Byte write & read (Size=2'b00)");
-
-        // Write a byte at address 0x30
-        alu_result_in = 32'h0000_0030;
-        DI            = 32'h0000_00EF;   // Only low 8 bits are relevant
-        rd_in         = 5'd12;
-
-        // Write: Size=byte(00), RW=1, E=1, L=0
-        set_ctrl(2'b00, 1'b1, 1'b1, 1'b0);
-        #1;
-
-        check_ctrl_pass();
-        check_value(alu_result_in, data_mux_out, "Byte write: L=0, data_mux_out should be alu_result_in");
-
-        // Read: Size=byte(00), RW=0, E=1, L=1
-        set_ctrl(2'b00, 1'b0, 1'b1, 1'b1);
-        #1;
-
-        check_ctrl_pass();
-        // data_memory read for byte: {24'b0, Memory[A]} => 0x000000EF
-        check_value(32'h0000_00EF, data_mux_out, "Byte read: should get 0x000000EF");
-
-        // -----------------------------------------
-        // Phase 5: Test L=0 vs L=1 with a non-zero memory value
-        // -----------------------------------------
-        $display("\n[Phase 5] L=0 vs L=1 behavior (choose between ALU and memory)");
-
-        // Reuse the word we wrote at address 0x10: 0xDEAD_BEEF
-        alu_result_in = 32'h0000_0010;
-        rd_in         = 5'd5;
-
-        // Read word, but L=0: we should get ALU result, NOT memory
-        set_ctrl(2'b10, 1'b0, 1'b1, 1'b0);
-        #1;
-
-        check_ctrl_pass();
-        check_value(alu_result_in, data_mux_out,
-                    "Word read with L=0: data_mux_out should be alu_result_in (bypass memory)");
-
-        // Read word, with L=1: we should now see memory contents
-        set_ctrl(2'b10, 1'b0, 1'b1, 1'b1);
-        #1;
-
-        check_ctrl_pass();
-        check_value(32'hDEAD_BEEF, data_mux_out,
-                    "Word read with L=1: data_mux_out should be loaded from memory");
-
-        // -----------------------------------------
-        // Done
-        // -----------------------------------------
-        $display("\n=== End of memory_stage_path test ===");
-        $finish;
-    end
-
-    // ============================
-    // Continuous monitor
-    // ============================
-    initial begin
-        $display("Time | alu_result_in DI          | Size RW E L | data_mux_out  mem_ctrl_in   mem_ctrl_out  rd_in rd_out");
-        $monitor("t=%0t | %8h %8h |  %b%b  %b %b | %8h  %8h  %8h  %2d    %2d",
-                 $time,
-                 alu_result_in, DI,
-                 Size, RW, E, L,
-                 data_mux_out,
-                 mem_ctrl_in, mem_ctrl_out,
-                 rd_in, rd_out);
-    end
-
-endmodule
-*/
 
 //////////////////////////////
 
@@ -3276,6 +2662,7 @@ module sparc_top (
     // ======================================================
     // ETAPA DECODING
     // ======================================================
+    wire [3:1] alu_ICC;
     decoding_stage_path #(
         .ADDR_WIDTH(9),
         .RESET_PC(9'd0),
@@ -3396,25 +2783,7 @@ end
         end
     end
     */
-    
-    // ======================================================
-    // ETAPA DE EJECUCIÓN (EX)
-    // ======================================================
-    /*execution_stage_path EX (
-        .A_EX(A_EX2),
-        .B_EX(B_EX2),
-        .instr_EX(instr_EX3),
-        .ex_ctrl_in(id_ctrl_out),
-        .D_EX(D_EX2),
-        .C_flag(carry_flag),
 
-        .ALU_mux_out(ALU_out_EX2),
-        .RD_EX_out(RD_EX_out),
-        .CC_EX(CC_EX),
-        .ex_ctrl_out(mempipe_ctrl_in),
-        .D_MEM_out(D_MEM_tmp)
-    );
-*/
   // Entradas
   
       // ======================================================
@@ -3433,7 +2802,7 @@ end
 
     wire Z_EX, N_EX, C_EX, V_EX;
     // CC y resultado hacia afuera
-    assign CC_EX        = {N_EX, Z_EX, V_EX, C_EX};
+   
     wire psr_carry = CC_EX[0];
     wire is_addx = (ALU_OP == 4'b0001); // your encoding for ADDX
     wire is_subx = (ALU_OP == 4'b0011); // your encoding for SUBX
@@ -3465,7 +2834,9 @@ end
         .Ci  (Ci_to_ALU),
         .OP  (ALU_OP)
     );
-
+    
+    
+     assign CC_EX = {N_EX, Z_EX, V_EX, C_EX};
     
     // MUX RD
     TwoToOneMux #(.WIDTH(5)) RD_mux (
@@ -3696,14 +3067,14 @@ module sparc_tb();
     // =============================================================
     // Imprimir en cada flanco de subida del reloj
     // =============================================================
-/*
+
     initial begin
     $monitor("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
              $time,
              DUT.PC_fetch,
              r5, r6, r16, r17, r18);
 end
-*/
+
     wire [1:0] opcode  = DUT.instr_ID[31:30];
     wire [3:0] cond    = DUT.instr_ID[28:25];
     wire [2:0] opcode2 = DUT.instr_ID[24:22];
@@ -3713,8 +3084,8 @@ end
     always @(posedge clk) begin
         // pequeño delay opcional para que se actualicen señales
         #1;
-        $display("------------------------------------------------");
-        $write("t=%0t ns | PC=%0d | Z=%b, N=%b, C=%b, V=%b, Ci=%b CC_En control_unit", $time, DUT.PC_fetch, DUT.Z_EX, DUT.N_EX, DUT.C_EX, DUT.V_EX, DUT.Ci_to_ALU);
+        //$display("------------------------------------------------");
+        //$write("t=%0t ns | PC=%0d | Z=%b, N=%b, C=%b, V=%b, Ci=%b ", $time, DUT.PC_fetch, DUT.Z_EX, DUT.N_EX, DUT.C_EX, DUT.V_EX, DUT.Ci_to_ALU);
 
         // Manejo de NOP
         if (DUT.instr_ID === 32'b0) begin
@@ -3853,7 +3224,8 @@ end
             endcase
         end
     end
-/*
+
+
 initial begin
         $monitor(
             "PC = %d\n\
@@ -3863,7 +3235,11 @@ initial begin
             D_MUX_OUT   = %d\n\
             ALU_A   = %d\n\
             ALU_B   = %d\n\
-            ALU_OP   = %d\n",
+            ALU_OP   = %d\n\
+            size   = %0b\n\
+            RW =     %0b\n\
+            E =      %b\n",
+            
             DUT.PC_fetch,
             DUT.ALU_Out_EX2,
             DUT.DI,
@@ -3871,17 +3247,19 @@ initial begin
             DUT.MEM.data_mux_out,
             DUT.A_EX2,
             DUT.SOH_out,
-            DUT.ALU_OP
-
+            DUT.ALU_OP,
+            DUT.mem_ctrl_in[8:7],
+            DUT.mem_ctrl_in[6],
+            DUT.mem_ctrl_in[5]
         );
     end
-    */
+    
     // =============================================================
     // Leer palabra en DM[56] en t ≈ 76
     // =============================================================
     reg [31:0] word56;
 
-/*
+
     initial begin
         #76;
         word56 = {
@@ -3893,7 +3271,7 @@ initial begin
 
         $display("t=%0t | DM[56] = %b", $time, word56);
     end
-*/
+
     // =============================================================
     // Terminar simulación en t=80
     // =============================================================

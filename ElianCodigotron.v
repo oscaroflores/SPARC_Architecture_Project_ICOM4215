@@ -67,8 +67,13 @@ C representa el bit de ”overflow” de operaciones de suma o resta de números
 denomina como “carry” para suma y como “borrow” para resta. Para la suma de dos números de n bits
 C es el bit n+1 del resultado de la suma. Para la resta de dos números (A - B) C será igual a 1 si A < B.
 */
-assign C = (OP == 4'b0000 || OP == 4'b0001) ? {1'b0, A} + {1'b0, B} + Ci :
-           (OP == 4'b0010 || OP == 4'b0011) ? ~({1'b0, A} - {1'b0, B} - Ci) :
+wire [32:0] add_ext = {1'b0, A} + {1'b0, B} + Ci;
+wire [32:0] sub_ext = {1'b0, A} - ({1'b0, B} + Ci);
+
+//assign C = 0;
+
+assign C = (OP == 4'b0000 || OP == 4'b0001) ? add_ext[32] :   // carry out of add
+           (OP == 4'b0010 || OP == 4'b0011) ? sub_ext[32] :   // borrow: 1 if A < B (+Ci)
            1'b0;
 
 /*
@@ -87,18 +92,22 @@ assign V = (OP == 4'b0000 || OP == 4'b0001) ? (~(A[31] ^ B[31]) & (A[31] ^ Out[3
     // =============================================================
     // Debug display: Entradas A y B de la ALU
     // =============================================================
-/*
+
     initial begin
         $display("==== MONITOREO ALU ====");
     end
-
+/*
     always @(*) begin
         $display("t = %0t", $time);
+        $display("  Out  = %0d", Out);
         $display("  OP  = %b", OP);
         $display("  Ci  = %b", Ci);
         $display("  A   = %h", A);
         $display("  B   = %h", B);
-        $display("  Out = %h", Out);
+        $display("  Z = %h", Z);
+        $display("  N = %h", N);
+        $display("  C = %h", C);
+        $display("  V = %h", V);
         $display("--------------------------\n");
     end
 */
@@ -118,9 +127,16 @@ module CCR (
         if (rst) begin
             CC_OUT    <= 4'b0000;
             carry_out <= 1'b0;
+            /*
+            // DEBUG display
+            $display("t=%0t | CCR RESET -> CC_OUT=0000 carry=0", $time);
         end else if (CC_EN) begin
             CC_OUT    <= ICC;
             carry_out <= ICC[0]; 
+               // DEBUG display
+            $display("t=%0t | CCR UPDATE | ICC=%b (N Z V C) | CC_OUT=%b | carry=%b",
+                     $time, ICC, ICC, ICC[0]);
+                     */
         end
     end
 endmodule
@@ -146,25 +162,29 @@ always @(*) begin
         C = ACC[0];
 
         case (cond)
-            4'b0000: J = 1'b0;               // BN
-            4'b0001: J = Z;                  // BEQ
-            4'b0010: J = Z | (N ^ V);        // BLE
-            4'b0011: J = (N ^ V);            // BL
-            4'b0100: J = C | Z;              // BLEU
-            4'b0101: J = C;                  // BCS
-            4'b0110: J = N;                  // BNEG
-            4'b0111: J = V;                  // BVS
-            4'b1000: J = 1'b1;               // BA
-            4'b1001: J = ~Z;                 // BNE
-            4'b1010: J = ~(Z | (N ^ V));     // BGT
-            4'b1011: J = ~(N ^ V);           // BGE
-            4'b1100: J = ~(C | Z);           // BGU
-            4'b1101: J = ~C;                 // BCC
-            4'b1110: J = ~N;                 // BPOS
-            4'b1111: J = ~V;                 // BVC
-            default: J = 1'b0;
+        4'b1000: J = 1'b1;             // BA
+        4'b0000: J = 1'b0;             // BN
+        4'b1001: J = ~Z;               // BNE
+        4'b0001: J =  Z;               // BE
+        4'b1010: J = ~(Z | (N ^ V));   // BG
+        4'b0010: J =  (Z | (N ^ V));   // BLE
+        4'b1011: J = ~(N ^ V);         // BGE
+        4'b0011: J =  (N ^ V);         // BL
+        4'b1100: J = ~(C | Z);         // BGU
+        4'b0100: J =  (C | Z);         // BLEU
+        4'b1101: J = ~C;               // BCC
+        4'b0101: J =  C;               // BCS
+        4'b1110: J = ~N;               // **BPOS: branch if positive**
+        4'b0110: J =  N;               // BNEG
+        4'b1111: J = ~V;               // BVC
+        4'b0111: J =  V;               // BVS
+        default: J = 1'b0;
         endcase
-
+    /*
+    // DEBUG: show condition codes and decision
+            $display("t=%0t | CH: BI=%b cond=%b | ACC=%b (N=%b Z=%b V=%b C=%b) | J=%b",
+                     $time, BI, cond, ACC, N, Z, V, C, J);
+    */    
     end else begin
         J = 1'b0;
     end
@@ -253,12 +273,24 @@ module control_unit(
                         RAM_RW = 1'b1; 
                         end
                         
-                        default: begin // Branch
-                        B = 1; 
-                        //SOH_OP = 4'b0001; 
-                        ALU_OP = 4'b1101;
-                        RAM_Size = 2'b01;
-                        end
+                        3'b010: begin
+                        // ---------- Bicc: all integer conditional branches ----------
+                        // BA, BN, BE, BNE, BG, BLE, BGE, BL, BGU, BLEU, BCC, BCS, BPOS, BNEG, BVC, BVS
+                        B         = 1'b1;     // "this is a branch"
+                        RF_LE     = 1'b0;     // branch doesn't write RF
+                        CC        = 1'b0;     // branch does not update PSR.icc
+                        CALL      = 1'b0;
+                        JMPL      = 1'b0;
+                        L         = 1'b0;
+                        RAM_Enable= 1'b0;
+                        RAM_RW    = 1'b0;
+                        RAM_Size  = 2'b00;
+                        ID_SR     = 3'b000;   // no register sources for load/store hazard logic
+
+                        ALU_OP    = 4'b1101;  // "PC + disp" path (however you defined it)
+                        SOH_OP    = 4'b0001;  // for example: select disp22 as branch offset
+               
+    end
                     endcase
                 end
                 
@@ -273,6 +305,12 @@ module control_unit(
                 
                 // OP = 10: Arithmetic, Logical, Shift, JMPL
                 2'b10: begin
+
+                    ID_SR[0] = 1'b1;      // RA (rs1) es fuente válida
+                    if (!i_bit)
+                        ID_SR[1] = 1'b1;  // RB (rs2) es fuente válida cuando no es inmediato
+
+
                     case (op3[4]) // verificar si la instruccion altera los contidion codes
                         1'b0: CC = 0;
                         1'b1: CC = 1;
@@ -344,6 +382,10 @@ module control_unit(
                             L          = 1'b1;    // ruta de load activa
                             RF_LE      = 1'b1;    // escribir en RF
                             SIGN_EXT   = 1'b0;    // no aplica, ya es word
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b000001: begin
@@ -354,6 +396,10 @@ module control_unit(
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b0;    // zero-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b001001: begin
@@ -364,6 +410,10 @@ module control_unit(
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b1;    // sign-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b000010: begin
@@ -374,6 +424,10 @@ module control_unit(
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b0;    // zero-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
 
                         6'b001010: begin
@@ -384,14 +438,22 @@ module control_unit(
                             L          = 1'b1;
                             RF_LE      = 1'b1;
                             SIGN_EXT   = 1'b1;    // sign-extend
+                            if (i_bit)
+                                ID_SR = 3'b001;  // [rs1 + simm13], rd
+                            else
+                            ID_SR = 3'b011;  // [rs1 + rs2], rd
                         end
-
+///////////////////////////////////////////////////////////////////////////////////
                         // ========= STORES =========
                         6'b000100: begin
                             // ST → store word
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;    // write
                             RAM_Size   = 2'b10;   // word
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                             // L=0, RF_LE=0
                         end
 
@@ -400,6 +462,10 @@ module control_unit(
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;
                             RAM_Size   = 2'b00;   // byte
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                         end
 
                         6'b000110: begin
@@ -407,6 +473,10 @@ module control_unit(
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;
                             RAM_Size   = 2'b01;   // halfword
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                         end
 
                         default: begin
@@ -416,6 +486,10 @@ module control_unit(
                             L          = 1'b0;
                             RF_LE      = 1'b0;
                             SIGN_EXT   = 1'b0;
+                            if (i_bit)
+                                ID_SR = 3'b101;   // rs1, rd
+                            else
+                                ID_SR = 3'b111;   // rs1, rs2, rd
                         end
                     endcase
                 end
@@ -430,6 +504,7 @@ module control_unit(
 
         // Unimos todas las señales en el bus control_signals
         control_signals = 32'b0;
+        
         control_signals[21]     = SIGN_EXT;
         control_signals[20:18]    = ID_SR;
         control_signals[17]    = CC;
@@ -1810,7 +1885,7 @@ endmodule
 
 
 //////////////////////////////
-
+/*
 module execution_stage_path (
     // Entradas
     input  wire [31:0] A_EX,          // operando A desde RF
@@ -1914,7 +1989,7 @@ module execution_stage_path (
 
 
 endmodule
-
+*/
 /*
 `timescale 1ns / 1ps
 
@@ -2366,7 +2441,7 @@ module decoding_stage_path #(
     wire [3:0] CCR_out_muxed;
     CCR u_CCR (
         .CC_EN(id_ctrl_out[17]),
-        .ICC(ALU_CC),
+        .ICC(CC_EX),
         .clock(clk),
         .rst(reset),
         .CC_OUT(CCR_out),
@@ -2375,7 +2450,7 @@ module decoding_stage_path #(
 
     TwoToOneMux #(.WIDTH(4)) ccr_mux (
         .in0 (CCR_out),
-        .in1 (ALU_CC),
+        .in1 (CC_EX),
         .sel (id_ctrl_out[17]),
         .out (CCR_out_muxed)
     );
@@ -2386,7 +2461,7 @@ module decoding_stage_path #(
     // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
-    wire [3:0] cond = instr_ID[28:25]; // asunción típica
+    wire [3:0] cond = instr_ID[25:22]; ////////////////////////////////////////////////////////////////////////////////
     wire [31:0] control_signals;
     wire reset_signal;
 
@@ -3208,7 +3283,7 @@ module sparc_top (
         .instr_ID(instr_ID),
 
         // Forwarding inputs
-        .ALU_Out_EX(ALU_out_EX),
+        .ALU_Out_EX(Mux_to_mem),
         .data_mem_mux(data_mux_out),
         .PW_WB(PW_WB), //------------------------------->cambiar a PW_WB
         .RW_WB(RW_WB), //------------------------------->cambiar a RW_WB
@@ -3352,6 +3427,15 @@ end
     wire [3:0] SOH_OP  = ex_ctrl_out[12:9];
     wire       CALLbit = ex_ctrl_out[2];
 
+    wire Z_EX, N_EX, C_EX, V_EX;
+    // CC y resultado hacia afuera
+    assign CC_EX        = {N_EX, Z_EX, V_EX, C_EX};
+    wire psr_carry = CC_EX[0];
+    wire is_addx = (ALU_OP == 4'b0001); // your encoding for ADDX
+    wire is_subx = (ALU_OP == 4'b0011); // your encoding for SUBX
+    wire use_carry_in = is_addx || is_subx;
+    wire Ci_to_ALU = use_carry_in ? psr_carry : 1'b0;
+    
     // SOH UNIT
     wire [31:0] SOH_out;
 
@@ -3364,7 +3448,7 @@ end
 
     // ALU
     wire [31:0] ALU_Out_EX2;
-    wire Z_EX, N_EX, C_EX, V_EX;
+   
 
     ALU alu0 (
         .Out (ALU_Out_EX2),
@@ -3374,12 +3458,10 @@ end
         .V   (V_EX),
         .A   (A_EX2),
         .B   (SOH_out),
-        .Ci  (carry_flag),
+        .Ci  (Ci_to_ALU),
         .OP  (ALU_OP)
     );
 
-    // CC y resultado hacia afuera
-    assign CC_EX        = {N_EX, Z_EX, V_EX, C_EX};
     
     // MUX RD
     TwoToOneMux #(.WIDTH(5)) RD_mux (
@@ -3678,14 +3760,16 @@ end
     // =============================================================
     // Imprimir en cada flanco de subida del reloj
     // =============================================================
+
+    initial begin
+    $monitor("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
+             $time,
+             DUT.PC_fetch,
+             r5, r6, r16, r17, r18);
+end
+
+
 /*
-    always @(posedge clk) begin
-        $display("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
-                 $time,
-                 DUT.PC_fetch,
-                 r5, r6, r16, r17, r18);
-    end
-*/
 initial begin
         $monitor(
             "PC = %d\n\
@@ -3707,6 +3791,7 @@ initial begin
 
         );
     end
+    */
     // =============================================================
     // Leer palabra en DM[56] en t ≈ 76
     // =============================================================

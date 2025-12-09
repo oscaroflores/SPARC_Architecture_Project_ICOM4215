@@ -1,5 +1,12 @@
 `timescale 1ns/1ps
 
+// =======================================
+// Generic 2-to-1 mux
+//  - WIDTH is parameterizable (default 32 bits)
+//  - sel = 0 -> out = in0
+//  - sel = 1 -> out = in1
+// =======================================
+
 module TwoToOneMux #(
     parameter WIDTH = 32
 )(

@@ -1,6 +1,4 @@
 `timescale 1ns / 1ps
-
-
 // Sumador especializado: R = A + 4
 module add4 #(
     parameter WIDTH = 32          // Ancho del bus (9 para PC/nPC, 32 para direcciones grandes, etc.)
@@ -21,13 +19,6 @@ endmodule
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 `timescale 1ns/1ps
-/* Tarea:
-En la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del ALU que se debe
-implementar. El ALU es un circuito combinacional (el efecto de las entradas se puede manifestar en las salidas
-casi de manera instantánea). Según indica la tabla de la verdad, el ALU toma dos números (A y B) y un bit de
-carry (Ci) y realiza operaciones con los mismos determinadas por la señal OP. El resultado de las operaciones
-es un número Out y cuatro flag bits de condiciones (Z, N, C y V). 
-*/
 module ALU (
     output reg [31:0] Out,
     output Z, N, C, V,
@@ -62,11 +53,6 @@ assign Z = (Out == 32'b0);
 // El bit N representa el signo del resultado de la operación (N = Out[31]).
 assign N = Out[31];
 
-/*
-C representa el bit de ”overflow” de operaciones de suma o resta de números sin signo. Se le
-denomina como “carry” para suma y como “borrow” para resta. Para la suma de dos números de n bits
-C es el bit n+1 del resultado de la suma. Para la resta de dos números (A - B) C será igual a 1 si A < B.
-*/
 wire [32:0] add_ext = {1'b0, A} + {1'b0, B} + Ci;
 wire [32:0] sub_ext = {1'b0, A} - ({1'b0, B} + Ci);
 
@@ -76,41 +62,10 @@ assign C = (OP == 4'b0000 || OP == 4'b0001) ? add_ext[32] :   // carry out of ad
            (OP == 4'b0010 || OP == 4'b0011) ? sub_ext[32] :   // borrow: 1 if A < B (+Ci)
            1'b0;
 
-/*
-V representa el bit de “overflow” de operaciones de suma o resta de números con signo. V es igual a 1
-cuando el signo del resultado de la suma o la resta no es consistente con las reglas de asignación de
-signo de operaciones aritméticas de números con signo, de lo contrario es igual a cero. V se puede
-determinar mediante una ecuación booleana de los signos de A, B y Out.
-Para A + B: V = ˜(A[31] ˆ B[31]) & (A[31] ˆ Out[31]).
-Para A - B: V = (A[31] ˆ B[31]) & (A[31] ˆ Out[31]).
-*/
 assign V = (OP == 4'b0000 || OP == 4'b0001) ? (~(A[31] ^ B[31]) & (A[31] ^ Out[31])) :
            (OP == 4'b0010 || OP == 4'b0011) ? ( (A[31] ^ B[31]) & (A[31] ^ Out[31])) :
            1'b0;
 
-
-    // =============================================================
-    // Debug display: Entradas A y B de la ALU
-    // =============================================================
-/*
-    initial begin
-        $display("==== MONITOREO ALU ====");
-    end
-
-    always @(*) begin
-        $display("t = %0t", $time);
-        $display("  Out  = %0d", Out);
-        $display("  OP  = %b", OP);
-        $display("  Ci  = %b", Ci);
-        $display("  A   = %h", A);
-        $display("  B   = %h", B);
-        $display("  Z = %h", Z);
-        $display("  N = %h", N);
-        $display("  C = %h", C);
-        $display("  V = %h", V);
-        $display("--------------------------\n");
-    end
-*/
 endmodule
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,16 +82,6 @@ module CCR (
         if (rst) begin
             CC_OUT    <= 4'b0000;
             carry_out <= 1'b0;
-            /*
-            // DEBUG display
-            $display("t=%0t | CCR RESET -> CC_OUT=0000 carry=0", $time);
-        end else if (CC_EN) begin
-            CC_OUT    <= ICC;
-            carry_out <= ICC[0]; 
-               // DEBUG display
-            $display("t=%0t | CCR UPDATE | ICC=%b (N Z V C) | CC_OUT=%b | carry=%b",
-                     $time, ICC, ICC, ICC[0]);
-                     */
         end
     end
 endmodule
@@ -189,14 +134,6 @@ end
 
 endmodule
 //////////////////////////////////////////////////////////////////
-
-
-
-/////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////
 
 `timescale 1ns / 1ps
 
@@ -593,96 +530,97 @@ module data_memory(
     // Pre-cargar Data Memory con instrucciones
     // ==========================================
     initial begin
+        $readmemb("testcode_sparc2.txt", Memory);
 
-        // Instruction 1
-        Memory[0]  = 8'b10001010;
-        Memory[1]  = 8'b00000000;
-        Memory[2]  = 8'b00100000;
-        Memory[3]  = 8'b00111000;
+        // // Instruction 1
+        // Memory[0]  = 8'b10001010;
+        // Memory[1]  = 8'b00000000;
+        // Memory[2]  = 8'b00100000;
+        // Memory[3]  = 8'b00111000;
 
-        // Instruction 2
-        Memory[4]  = 8'b11100000;
-        Memory[5]  = 8'b01001001;
-        Memory[6]  = 8'b01000000;
-        Memory[7]  = 8'b00000000;
+        // // Instruction 2
+        // Memory[4]  = 8'b11100000;
+        // Memory[5]  = 8'b01001001;
+        // Memory[6]  = 8'b01000000;
+        // Memory[7]  = 8'b00000000;
 
-        // Instruction 3
-        Memory[8]  = 8'b11100010;
-        Memory[9]  = 8'b00001001;
-        Memory[10] = 8'b01100000;
-        Memory[11] = 8'b00000001;
+        // // Instruction 3
+        // Memory[8]  = 8'b11100010;
+        // Memory[9]  = 8'b00001001;
+        // Memory[10] = 8'b01100000;
+        // Memory[11] = 8'b00000001;
 
-        // Instruction 4
-        Memory[12] = 8'b11100100;
-        Memory[13] = 8'b00001001;
-        Memory[14] = 8'b01100000;
-        Memory[15] = 8'b00000010;
+        // // Instruction 4
+        // Memory[12] = 8'b11100100;
+        // Memory[13] = 8'b00001001;
+        // Memory[14] = 8'b01100000;
+        // Memory[15] = 8'b00000010;
 
-        // Instruction 5
-        Memory[16] = 8'b10001100;
-        Memory[17] = 8'b10000000;
-        Memory[18] = 8'b00000000;
-        Memory[19] = 8'b00010000;
+        // // Instruction 5
+        // Memory[16] = 8'b10001100;
+        // Memory[17] = 8'b10000000;
+        // Memory[18] = 8'b00000000;
+        // Memory[19] = 8'b00010000;
 
-        // Instruction 6
-        Memory[20] = 8'b00011100;
-        Memory[21] = 8'b10000000;
-        Memory[22] = 8'b00000000;
-        Memory[23] = 8'b00000101;
+        // // Instruction 6
+        // Memory[20] = 8'b00011100;
+        // Memory[21] = 8'b10000000;
+        // Memory[22] = 8'b00000000;
+        // Memory[23] = 8'b00000101;
 
-        // Instruction 7 (NOP)
-        Memory[24] = 8'b00000000;
-        Memory[25] = 8'b00000000;
-        Memory[26] = 8'b00000000;
-        Memory[27] = 8'b00000000;
+        // // Instruction 7 (NOP)
+        // Memory[24] = 8'b00000000;
+        // Memory[25] = 8'b00000000;
+        // Memory[26] = 8'b00000000;
+        // Memory[27] = 8'b00000000;
 
-        // Instruction 8
-        Memory[28] = 8'b10001100;
-        Memory[29] = 8'b00100100;
-        Memory[30] = 8'b10000000;
-        Memory[31] = 8'b00010001;
+        // // Instruction 8
+        // Memory[28] = 8'b10001100;
+        // Memory[29] = 8'b00100100;
+        // Memory[30] = 8'b10000000;
+        // Memory[31] = 8'b00010001;
 
-        // Instruction 9
-        Memory[32] = 8'b00010000;
-        Memory[33] = 8'b10000000;
-        Memory[34] = 8'b00000000;
-        Memory[35] = 8'b00000011;
+        // // Instruction 9
+        // Memory[32] = 8'b00010000;
+        // Memory[33] = 8'b10000000;
+        // Memory[34] = 8'b00000000;
+        // Memory[35] = 8'b00000011;
 
-        // Instruction 10 (NOP)
-        Memory[36] = 8'b00000000;
-        Memory[37] = 8'b00000000;
-        Memory[38] = 8'b00000000;
-        Memory[39] = 8'b00000000;
+        // // Instruction 10 (NOP)
+        // Memory[36] = 8'b00000000;
+        // Memory[37] = 8'b00000000;
+        // Memory[38] = 8'b00000000;
+        // Memory[39] = 8'b00000000;
 
-        // Instruction 11
-        Memory[40] = 8'b10001100;
-        Memory[41] = 8'b00000100;
-        Memory[42] = 8'b10000000;
-        Memory[43] = 8'b00010001;
+        // // Instruction 11
+        // Memory[40] = 8'b10001100;
+        // Memory[41] = 8'b00000100;
+        // Memory[42] = 8'b10000000;
+        // Memory[43] = 8'b00010001;
 
-        // Instruction 12
-        Memory[44] = 8'b11001100;
-        Memory[45] = 8'b00101001;
-        Memory[46] = 8'b01100000;
-        Memory[47] = 8'b00000011;
+        // // Instruction 12
+        // Memory[44] = 8'b11001100;
+        // Memory[45] = 8'b00101001;
+        // Memory[46] = 8'b01100000;
+        // Memory[47] = 8'b00000011;
 
-        // Instruction 13
-        Memory[48] = 8'b00010000;
-        Memory[49] = 8'b10000000;
-        Memory[50] = 8'b00000000;
-        Memory[51] = 8'b00000000;
+        // // Instruction 13
+        // Memory[48] = 8'b00010000;
+        // Memory[49] = 8'b10000000;
+        // Memory[50] = 8'b00000000;
+        // Memory[51] = 8'b00000000;
 
-        // Instruction 14 (NOP)
-        Memory[52] = 8'b00000000;
-        Memory[53] = 8'b00000000;
-        Memory[54] = 8'b00000000;
-        Memory[55] = 8'b00000000;
+        // // Instruction 14 (NOP)
+        // Memory[52] = 8'b00000000;
+        // Memory[53] = 8'b00000000;
+        // Memory[54] = 8'b00000000;
+        // Memory[55] = 8'b00000000;
 
-        // Instruction 15
-        Memory[56] = 8'b11111100;
-        Memory[57] = 8'b00010011;
-        Memory[58] = 8'b00100000;
-        Memory[59] = 8'b00000000;
+        // // Instruction 15
+        // Memory[56] = 8'b11111100;
+        // Memory[57] = 8'b00010011;
+        // Memory[58] = 8'b00100000;
+        // Memory[59] = 8'b00000000;
 
     end
 
@@ -836,24 +774,6 @@ always @(posedge clk) begin
             mem_rd_out       <= ex_rd_in;
         end
     end
-/*
-    // ============================
-    // Debug display EX → MEM
-    // ============================
-    initial begin
-        $display("===== EX_MEM_reg MONITOR =====");
-        $display(" t | ex_alu_out_in | mem_alu_out");
-        $display("================================");
-    end
-
-    // Usa $strobe para ver mem_alu_out ya actualizado
-    always @(posedge clk) begin
-        if (!reset) begin
-            $strobe("t=%0t | ex_alu_out_in=%0d | mem_alu_out=%0d",
-                    $time, ex_alu_out_in, mem_alu_out);
-        end
-    end
-    */
 endmodule
 
 
@@ -996,97 +916,98 @@ module instruction_memory (
     end
 
     initial begin
+        $readmemb("testcode_sparc2.txt", Memory);
         // -----------------------------------------------------
         // Instruction 1: 10001010 00000000 00100000 00111000
         // -----------------------------------------------------
-        Memory[0]  = 8'b10001010;
-        Memory[1]  = 8'b00000000;
-        Memory[2]  = 8'b00100000;
-        Memory[3]  = 8'b00111000;
+        // Memory[0]  = 8'b10001010;
+        // Memory[1]  = 8'b00000000;
+        // Memory[2]  = 8'b00100000;
+        // Memory[3]  = 8'b00111000;
 
-        // Instruction 2
-        Memory[4]  = 8'b11100000;
-        Memory[5]  = 8'b01001001;
-        Memory[6]  = 8'b01000000;
-        Memory[7]  = 8'b00000000;
+        // // Instruction 2
+        // Memory[4]  = 8'b11100000;
+        // Memory[5]  = 8'b01001001;
+        // Memory[6]  = 8'b01000000;
+        // Memory[7]  = 8'b00000000;
 
-        // Instruction 3
-        Memory[8]  = 8'b11100010;
-        Memory[9]  = 8'b00001001;
-        Memory[10] = 8'b01100000;
-        Memory[11] = 8'b00000001;
+        // // Instruction 3
+        // Memory[8]  = 8'b11100010;
+        // Memory[9]  = 8'b00001001;
+        // Memory[10] = 8'b01100000;
+        // Memory[11] = 8'b00000001;
 
-        // Instruction 4
-        Memory[12] = 8'b11100100;
-        Memory[13] = 8'b00001001;
-        Memory[14] = 8'b01100000;
-        Memory[15] = 8'b00000010;
+        // // Instruction 4
+        // Memory[12] = 8'b11100100;
+        // Memory[13] = 8'b00001001;
+        // Memory[14] = 8'b01100000;
+        // Memory[15] = 8'b00000010;
 
-        // Instruction 5
-        Memory[16] = 8'b10001100;
-        Memory[17] = 8'b10000000;
-        Memory[18] = 8'b00000000;
-        Memory[19] = 8'b00010000;
+        // // Instruction 5
+        // Memory[16] = 8'b10001100;
+        // Memory[17] = 8'b10000000;
+        // Memory[18] = 8'b00000000;
+        // Memory[19] = 8'b00010000;
 
-        // Instruction 6
-        Memory[20] = 8'b00011100;
-        Memory[21] = 8'b10000000;
-        Memory[22] = 8'b00000000;
-        Memory[23] = 8'b00000101;
+        // // Instruction 6
+        // Memory[20] = 8'b00011100;
+        // Memory[21] = 8'b10000000;
+        // Memory[22] = 8'b00000000;
+        // Memory[23] = 8'b00000101;
 
-        // Instruction 7
-        Memory[24] = 8'b00000000;
-        Memory[25] = 8'b00000000;
-        Memory[26] = 8'b00000000;
-        Memory[27] = 8'b00000000;
+        // // Instruction 7
+        // Memory[24] = 8'b00000000;
+        // Memory[25] = 8'b00000000;
+        // Memory[26] = 8'b00000000;
+        // Memory[27] = 8'b00000000;
 
-        // Instruction 8
-        Memory[28] = 8'b10001100;
-        Memory[29] = 8'b00100100;
-        Memory[30] = 8'b10000000;
-        Memory[31] = 8'b00010001;
+        // // Instruction 8
+        // Memory[28] = 8'b10001100;
+        // Memory[29] = 8'b00100100;
+        // Memory[30] = 8'b10000000;
+        // Memory[31] = 8'b00010001;
 
-        // Instruction 9
-        Memory[32] = 8'b00010000;
-        Memory[33] = 8'b10000000;
-        Memory[34] = 8'b00000000;
-        Memory[35] = 8'b00000011;
+        // // Instruction 9
+        // Memory[32] = 8'b00010000;
+        // Memory[33] = 8'b10000000;
+        // Memory[34] = 8'b00000000;
+        // Memory[35] = 8'b00000011;
 
-        // Instruction 10
-        Memory[36] = 8'b00000000;
-        Memory[37] = 8'b00000000;
-        Memory[38] = 8'b00000000;
-        Memory[39] = 8'b00000000;
+        // // Instruction 10
+        // Memory[36] = 8'b00000000;
+        // Memory[37] = 8'b00000000;
+        // Memory[38] = 8'b00000000;
+        // Memory[39] = 8'b00000000;
 
-        // Instruction 11
-        Memory[40] = 8'b10001100;
-        Memory[41] = 8'b00000100;
-        Memory[42] = 8'b10000000;
-        Memory[43] = 8'b00010001;
+        // // Instruction 11
+        // Memory[40] = 8'b10001100;
+        // Memory[41] = 8'b00000100;
+        // Memory[42] = 8'b10000000;
+        // Memory[43] = 8'b00010001;
 
-        // Instruction 12
-        Memory[44] = 8'b11001100;
-        Memory[45] = 8'b00101001;
-        Memory[46] = 8'b01100000;
-        Memory[47] = 8'b00000011;
+        // // Instruction 12
+        // Memory[44] = 8'b11001100;
+        // Memory[45] = 8'b00101001;
+        // Memory[46] = 8'b01100000;
+        // Memory[47] = 8'b00000011;
 
-        // Instruction 13
-        Memory[48] = 8'b00010000;
-        Memory[49] = 8'b10000000;
-        Memory[50] = 8'b00000000;
-        Memory[51] = 8'b00000000;
+        // // Instruction 13
+        // Memory[48] = 8'b00010000;
+        // Memory[49] = 8'b10000000;
+        // Memory[50] = 8'b00000000;
+        // Memory[51] = 8'b00000000;
 
-        // Instruction 14
-        Memory[52] = 8'b00000000;
-        Memory[53] = 8'b00000000;
-        Memory[54] = 8'b00000000;
-        Memory[55] = 8'b00000000;
+        // // Instruction 14
+        // Memory[52] = 8'b00000000;
+        // Memory[53] = 8'b00000000;
+        // Memory[54] = 8'b00000000;
+        // Memory[55] = 8'b00000000;
 
-        // Instruction 15
-        Memory[56] = 8'b11111100;
-        Memory[57] = 8'b00010011;
-        Memory[58] = 8'b00100000;
-        Memory[59] = 8'b00000000;
+        // // Instruction 15
+        // Memory[56] = 8'b11111100;
+        // Memory[57] = 8'b00010011;
+        // Memory[58] = 8'b00100000;
+        // Memory[59] = 8'b00000000;
     end
 endmodule
 
@@ -1206,15 +1127,6 @@ endmodule
 /////////////////////////////////////////////////////////
 
 `timescale 1ns/1ps
-/*
-Tarea:
-En el diagrama de la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del circuito que
-se debe implementar. Este es un circuito combinacional (el efecto de las entradas se puede manifestar en las
-salidas casi de manera instantánea). Según indica la tabla de la verdad, el circuito tiene como entradas un
-número de 32 bits (R), un número de 22 bits (Imm) y cuatro bits (IS) que corresponden a bits de una
-instrucción. El circuito tiene como salida un número N de 32 bits cuyo su valor depende de los inputs según
-indica la tabla de la verdad. El símbolo || significa concatenación.
-*/
 module SOH(
     input  [31:0] R,
   	input  [21:0] Imm,
@@ -1468,8 +1380,6 @@ module TwoToOneMux #(
 
 endmodule
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 `timescale 1ns / 1ps
 
 // =====================
@@ -1616,7 +1526,6 @@ module fetch_stage_path #(
     // ======================
     //  Instruction Memory
     // ======================
-    // OJO: usa el nombre real de tu módulo de memoria de instrucciones
     instruction_memory u_imem (
         .A(PC_reg),     // dirección = PC de 9 bits
         .I(instr_F)     // instrucción de 32 bits hacia IF/ID
@@ -1631,9 +1540,6 @@ module fetch_stage_path #(
 
 endmodule
 
-
-
-///////////////////////////
 `timescale 1ns / 1ps
 
 module decoding_stage_path #(
@@ -1736,7 +1642,7 @@ module decoding_stage_path #(
         .RW (RW_WB),
 
         .PW (PW_WB),
-        .LE (RF_LE_WB),   //RF_LE_WB     -------------------------->>>>>>>>>>>>>>>> cambiar esto 
+        .LE (RF_LE_WB),
         .Clk(clk)
     );
 
@@ -1791,22 +1697,14 @@ module decoding_stage_path #(
         .sel (ex_ctrl_in[17]),
         .out (CCR_out_muxed)
     );
-    /*
-    always @(posedge clk) begin
-    $display("CCR ICC : %b",ALU_CC);
-    $display("CCR out(ACC): %b", CCR_out);
-    $display("CCR out del mux: %b", CCR_out_muxed);
-     $display("CC_EN: %b", ex_ctrl_in[17]);
-     
-end
-*/
+
     // ------------------------------------------------------------
     // CH: condition handler (combinacional) -> produce J (branch taken)
     // CH expects: BI, cond, ACC[3:0] -> J
     // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
-    wire [3:0] cond = instr_ID[28:25]; ////////////////////////////////////////////////////////////////////////////////
+    wire [3:0] cond = instr_ID[28:25];
     wire [31:0] control_signals;
     wire reset_signal;
 
@@ -1842,19 +1740,8 @@ end
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
     assign instr_EX = instr_ID;
-/*   
-    always @(posedge clk) begin
-        $display("ID @t=%0t | instr_ID=%h instr_EX=%h | id_ctrl_out=%h",
-                 $time, instr_ID, instr_EX, id_ctrl_out);
-    end
-*/
 
 endmodule
-
-
-
-
-//////////////////////////////////////////
 
 module memory_stage_path (
     input  wire [31:0]  alu_result_in,
@@ -2081,47 +1968,6 @@ module sparc_top (
    
     );
  
-    
-/*    
-// =====================
-// DEBUG DISPLAY FOR DECODING
-// =====================
-always @(posedge clk) begin
-    if (!reset) begin
-        $display("==== DECODING @t=%0t ====", $time);
-        $display("  B_PC_ID     = %h", B_PC_ID);
-        $display("  instr_ID    = %h", instr_ID);
-
-        // Forwarding-related inputs
-        $display("  ALU_out_EX  = %h", ALU_out_EX);
-        $display("  data_mem_mux= %h", data_mux_out);
-        $display("  PW_WB       = %h", PW_WB);
-        $display("  RW_WB       = %0d", RW_WB);
-        $display("  RF_LE_WB    = %b", RF_LE_WB);
-
-        // DHDU & control
-        $display("  NOP         = %b", NOP);
-        $display("  LE_DHDU     = %b", LE_DHDU);
-        $display("  ALU_CC      = %b", CC_EX);
-        $display("  ex_ctrl_in  = %h", ex_ctrl_out);
-        $display("  A_S         = %b", A_S);
-        $display("  B_S         = %b", B_S);
-        $display("  D_S         = %b", D_S);
-
-        // Outputs towards EX
-        $display("  A_EX (A_src)= %h", A_EX);
-        $display("  B_EX (B_src)= %h", B_EX);
-        $display("  D_EX (D_src)= %h", D_EX);
-        $display("  instr_EX2   = %h", instr_EX2);
-        $display("  TA          = %h", TA);
-        $display("  J           = %b", J);
-        $display("  carry_flag  = %b", carry_flag);
-        $display("  id_ctrl_out = %h", id_ctrl_out);
-        $display("========================\n");
-    end
-end
-
-*/
     wire[31:0] instr_EX3;
     wire[31:0] D_EX2;
     wire[31:0] A_EX2;
@@ -2276,32 +2122,7 @@ end
         .mem_ctrl_out(mem_ctrl_out),
         .rd_out(rd_mem)
     );
-    /*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("ID/EX @t=%0t | alu in=%h data mux out=%b memcontrolIN=%b",
-                     $time,
-                    alu_result_in,
-                   data_mux_out,
-                    mem_ctrl_in);       
-        end
-    end
-    */
-    /*
-    always @(posedge clk) begin
-    if (!reset) begin
-        $display("MEM @t=%0t | alu_result_in=%h mem_ctrl_in=%h rd_in=%0d DI=%h | data_mux_out=%h mem_ctrl_out=%h rd_mem=%0d",
-                 $time,
-                 alu_result_in,
-                 mem_ctrl_in,
-                 rd_in,
-                 DI,
-                 data_mux_out,
-                 mem_ctrl_out,
-                 rd_mem);
-    end
-end
-    */
+
     // ======================================================
     // REGISTRO MEM/WB
     // ======================================================
@@ -2353,9 +2174,6 @@ end
     );
 endmodule
 
-
-`timescale 1ns/1ps
-
 module sparc_tb();
 
     reg clk;
@@ -2369,250 +2187,143 @@ module sparc_tb();
         .reset(reset)
     );
 
-    // ============================
-    // Generación del reloj (toggle cada 2)
-    // ============================
-    initial begin
-        clk = 1'b0;
-        forever #2 clk = ~clk;
-    end
-
-    // ============================
-    // Reset: 1 → 0 en t = 3
-    // ============================
-    initial begin
-        reset = 1'b1;
-        #3 reset = 1'b0;
-    end
-
-
-    
-
-    
-
     // =============================================================
-    // Wires para debug de registros específicos (RF interno)
+    // Wires importantes
     // =============================================================
+    wire signed [31:0] r1  = DUT.ID.REG_FILE.r1;
+    wire signed [31:0] r2  = DUT.ID.REG_FILE.r2;
+    wire signed [31:0] r3 = DUT.ID.REG_FILE.r3;
+    wire signed [31:0] r4  = DUT.ID.REG_FILE.r4;
     wire signed [31:0] r5  = DUT.ID.REG_FILE.r5;
     wire signed [31:0] r6  = DUT.ID.REG_FILE.r6;
+    wire signed [31:0] r8  = DUT.ID.REG_FILE.r8;
+    wire signed [31:0] r10 = DUT.ID.REG_FILE.r10;
+    wire signed [31:0] r11 = DUT.ID.REG_FILE.r11;
+    wire signed [31:0] r12 = DUT.ID.REG_FILE.r12;
+    wire signed [31:0] r15 = DUT.ID.REG_FILE.r15;
     wire signed [31:0] r16 = DUT.ID.REG_FILE.r16;
     wire signed [31:0] r17 = DUT.ID.REG_FILE.r17;
     wire signed [31:0] r18 = DUT.ID.REG_FILE.r18;
 
-    // =============================================================
-    // Imprimir en cada flanco de subida del reloj
-    // =============================================================
+    integer i;
 
+    // ============================================
+    // Inicialización de reloj
+    // ============================================
     initial begin
-    $monitor("t=%0t | PC=%0d  r5=%0d  r6=%0d  r16=%0d  r17=%0d  r18=%0d",
-             $time,
-             DUT.PC_fetch,
-             r5, r6, r16, r17, r18);
-end
-
-    wire [1:0] opcode  = DUT.instr_ID[31:30];
-    wire [3:0] cond    = DUT.instr_ID[28:25];
-    wire [2:0] opcode2 = DUT.instr_ID[24:22];
-    wire [5:0] opcode3 = DUT.instr_ID[24:19];
-
-    /*
-    always @(posedge clk) begin
-        // pequeño delay opcional para que se actualicen señales
-        
-        //$display("------------------------------------------------");
-        //$write("t=%0t ns | PC=%0d | Z=%b, N=%b, C=%b, V=%b, Ci=%b ", $time, DUT.PC_fetch, DUT.Z_EX, DUT.N_EX, DUT.C_EX, DUT.V_EX, DUT.Ci_to_ALU);
-
-        // Manejo de NOP
-        if (DUT.instr_ID === 32'b0) begin
-            $write("Instr=NOP ");
-        end else begin
-            case (opcode)
-                2'b00: begin 
-                    case (opcode2)
-                        3'b100: begin
-                            $write("Instr=SETHI ");
-                        end
-                        default: begin
-                            case (cond)
-                                4'b1000: $write("Instr=BA ");
-                                4'b0000: $write("Instr=BN ");
-                                4'b1001: $write("Instr=BNE ");
-                                4'b0001: $write("Instr=BE ");
-                                4'b1010: $write("Instr=BG ");
-                                4'b0010: $write("Instr=BLE ");
-                                4'b1011: $write("Instr=BGE ");
-                                4'b0011: $write("Instr=BL ");
-                                4'b1100: $write("Instr=BGU ");
-                                4'b0100: $write("Instr=BLEU ");
-                                4'b1101: $write("Instr=BCC ");
-                                4'b0101: $write("Instr=BCS ");
-                                4'b1110: $write("Instr=BPOS ");
-                                4'b0110: $write("Instr=BNEG "); 
-                                4'b1111: $write("Instr=BVC ");
-                                4'b0111: $write("Instr=BVS ");
-                                default: $write("Instr=UNKNOWN COND ");
-                            endcase
-                        end
-                    endcase
-                end
-                
-                2'b01: begin
-                    $write("Instr=CALL ");
-                end
-
-                2'b10: begin
-                    case (opcode3)
-                        // Basic Arithmetic Instructions
-                        6'b000000: $write("Instr=ADD ");
-                        6'b010000: $write("Instr=ADDCC ");
-                        6'b001000: $write("Instr=ADDX ");
-                        6'b011000: $write("Instr=ADDXCC ");
-                        6'b000100: $write("Instr=SUB ");
-                        6'b010100: $write("Instr=SUBCC ");
-                        6'b001100: $write("Instr=SUBX ");
-                        6'b011100: $write("Instr=SUBXCC ");
-
-                        // Tagged Arithmetic Instructions
-                        6'b100000: $write("Instr=TADDCC ");
-                        6'b100010: $write("Instr=TADDCCTV ");
-                        6'b100001: $write("Instr=TSUBCC ");
-                        6'b100011: $write("Instr=TSUBCCTV ");
-
-                        // Other Arithmetic Instructions
-                        6'b100101: $write("Instr=MULSCC ");
-                        6'b001010: $write("Instr=UMUL ");
-                        6'b011010: $write("Instr=UMULCC ");
-                        6'b001001: $write("Instr=SMUL ");
-                        6'b011001: $write("Instr=SMULCC ");
-                        6'b001110: $write("Instr=UDIV ");
-                        6'b011110: $write("Instr=UDIVCC ");
-                        6'b001111: $write("Instr=SDIV ");
-                        6'b011111: $write("Instr=SDIVCC ");
-
-                        // Logical Instructions
-                        6'b000001: $write("Instr=AND ");
-                        6'b010001: $write("Instr=ANDCC ");
-                        6'b000101: $write("Instr=ANDN ");
-                        6'b010101: $write("Instr=ANDNCC ");
-                        6'b000010: $write("Instr=OR ");
-                        6'b010010: $write("Instr=ORCC ");
-                        6'b000110: $write("Instr=ORN ");
-                        6'b010110: $write("Instr=ORNCC ");
-                        6'b000011: $write("Instr=XOR ");
-                        6'b010011: $write("Instr=XORCC ");
-                        6'b000111: $write("Instr=XNOR ");
-                        6'b010111: $write("Instr=XNORCC ");
-
-                        // Shift Instructions
-                        6'b100101: $write("Instr=SLL ");
-                        6'b100110: $write("Instr=SRL ");
-                        6'b100111: $write("Instr=SRA ");
-
-                        // Save and Restore Instruction Format
-                        6'b111100: $write("Instr=SAVE ");
-                        6'b111101: $write("Instr=RESTORE ");
-
-                        // JMPL Instruction
-                        6'b111000: $write("Instr=JMPL ");
-
-                        // Trap on Integer Condition Codes
-                        6'b111010: $write("Instr=TRAP ");
-
-                        // Return from Trap Instruction - RETT
-                        6'b111001: $write("Instr=RETT ");
-
-                        // Read State Register Instructions
-                        6'b101001: $write("Instr=RDPSR ");
-                        6'b101010: $write("Instr=RDWIM ");
-                        6'b101011: $write("Instr=RDTBR ");
-
-                        // Write State Register Instructions
-                        6'b110001: $write("Instr=WRPSR ");
-                        6'b110010: $write("Instr=WRWIM ");
-                        6'b110011: $write("Instr=WRTBR ");
-
-                        default:   $write("Instr=UNKNOWN (op3=%b) ", opcode3);
-                    endcase
-                end
-
-                2'b11: begin
-                    case (opcode3)
-                        6'b001001: $write("Instr=LSB ");
-                        6'b001010: $write("Instr=LDSH ");
-                        6'b000000: $write("Instr=LD ");
-                        6'b000001: $write("Instr=LDUB ");
-                        6'b000010: $write("Instr=LDUH ");
-                        6'b000011: $write("Instr=LDD ");
-                        6'b000101: $write("Instr=STB ");
-                        6'b000110: $write("Instr=STH ");
-                        6'b000100: $write("Instr=ST ");
-                        6'b000111: $write("Instr=STD ");
-                        6'b001101: $write("Instr=LDSTUB ");
-                        6'b001111: $write("Instr=SWAP ");
-                        default:   $write("Instr=LOAD/STORE OTHER ");
-                    endcase
-                end
-
-                default: begin
-                    $write("Instr=UNKNOWN OP ");
-                end
-            endcase
-        end
+        clk = 0;
+        forever #2 clk = ~clk;
     end
-*/
-/*
-initial begin
+
+    // ====================================
+    // Inicialización de reset
+    // ====================================
+    initial begin
+        reset = 1;
+        #3 reset = 0;
+    end
+
+    // =============================================================
+    // SELECCIÓN DE TEST
+    // =============================================================
+
+`ifdef debugging
+    initial begin
         $monitor(
-            "PC = %d\n\
-            ALU_OUT     = %d\n\
-            DI          = %d\n\
-            Address   = %d\n\
-            D_MUX_OUT   = %d\n\
-            ALU_A   = %d\n\
-            ALU_B   = %d\n\
-            ALU_OP   = %d\n\
-            size   = %0b\n\
-            RW =     %0b\n\
-            E =      %b\n",
-            
-            DUT.PC_fetch,
-            DUT.ALU_Out_EX2,
-            DUT.DI,
-            DUT.alu_result_in,
-            DUT.MEM.data_mux_out,
-            DUT.A_EX2,
-            DUT.SOH_out,
-            DUT.ALU_OP,
-            DUT.mem_ctrl_in[8:7],
-            DUT.mem_ctrl_in[6],
-            DUT.mem_ctrl_in[5]
+            { "==== debugging ==== \n",
+            "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+            "r5=%0d r6=%0d r16=%0d r17=%0d r18=%0d\n"
+            },
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r5, r6, r16, r17, r18
         );
     end
-*/
-    // =============================================================
-    // Leer palabra en DM[56] en t ≈ 76
-    // =============================================================
-    reg [31:0] word56;
-
 
     initial begin
         #76;
-        word56 = {
+        $display("DM[56 to 59] = %b %b %b %b",
             DUT.MEM.data_memory_inst.Memory[56],
             DUT.MEM.data_memory_inst.Memory[57],
             DUT.MEM.data_memory_inst.Memory[58],
             DUT.MEM.data_memory_inst.Memory[59]
-        };
-
-        $display("t=%0t | DM[56] = %b", $time, word56);
+        );
     end
 
-    // =============================================================
-    // Terminar simulación en t=80
-    // =============================================================
     initial begin
-        #80;
+        #80 $finish;
+    end
+
+`elsif sparc1
+    initial begin
+        $monitor(
+            { "==== testcode_sparc1 ====\n",
+              "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "r1=%0d r2=%0d r3=%0d r5=%0d\n"
+            },
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r1, r2, r3, r5
+        );
+    end
+
+    initial begin
+        #160;
+        $display("DM[44-47] = %b %b %b %b",
+            DUT.MEM.data_memory_inst.Memory[44],
+            DUT.MEM.data_memory_inst.Memory[45],
+            DUT.MEM.data_memory_inst.Memory[46],
+            DUT.MEM.data_memory_inst.Memory[47]
+        );
+    end
+
+    initial begin
+        #164 $finish;
+    end
+
+`elsif sparc2
+    initial begin
+        $monitor(
+            { "==== sparc2 ====\n",
+              "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "r1=%0d r2=%0d r3=%0d\n",
+              "r4=%0d r5=%0d r8=%0d\n",
+              "r10=%0d r11=%0d\n",
+              "r12=%0d r15=%0d\n"
+            },
+            DUT.PC_fetch, DUT.nPC_fetch,
+            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r1, r2, r3,
+            r4, r5, r8,
+            r10, r11,
+            r12, r15
+        );
+    end
+
+    initial begin
+        #240;
+        for (i = 224; i < 264; i = i + 4) begin
+            $display("D[%0d]= %b, D[%0d]= %b, D[%0d]= %b, D[%0d]= %b",
+                i,
+                DUT.MEM.data_memory_inst.Memory[i],
+                i+1,
+                DUT.MEM.data_memory_inst.Memory[i+1],
+                i+2,
+                DUT.MEM.data_memory_inst.Memory[i+2],
+                i+3,
+                DUT.MEM.data_memory_inst.Memory[i+3]
+            );
+        end
+    end
+
+    initial begin
+        #244 $finish;
+    end
+`else
+    initial begin
+        $display("ERROR: use command \"iverilog -Ddebugging\" Define debugging, testcode_sparc1 or sparc2");
         $finish;
     end
+`endif
 
 endmodule

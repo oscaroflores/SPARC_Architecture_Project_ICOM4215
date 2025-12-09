@@ -1,6 +1,5 @@
 `timescale 1ns / 1ps
 
-
 // Sumador especializado: R = A + 4
 module add4 #(
     parameter WIDTH = 32          // Ancho del bus (9 para PC/nPC, 32 para direcciones grandes, etc.)

@@ -1,6 +1,5 @@
 `timescale 1ns/1ps
 
-
 module memory_stage_path (
     input  wire [31:0]  alu_result_in,
     input  wire [31:0]  mem_ctrl_in,

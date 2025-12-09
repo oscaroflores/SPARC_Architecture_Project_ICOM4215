@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module reset_handler(
     input jumpl,
     input call,

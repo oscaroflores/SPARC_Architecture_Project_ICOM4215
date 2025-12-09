@@ -1,13 +1,4 @@
 `timescale 1ns/1ps
-/*
-Tarea:
-En el diagrama de la página siguiente se muestra un diagrama de bloque y la tabla de la verdad del circuito que
-se debe implementar. Este es un circuito combinacional (el efecto de las entradas se puede manifestar en las
-salidas casi de manera instantánea). Según indica la tabla de la verdad, el circuito tiene como entradas un
-número de 32 bits (R), un número de 22 bits (Imm) y cuatro bits (IS) que corresponden a bits de una
-instrucción. El circuito tiene como salida un número N de 32 bits cuyo su valor depende de los inputs según
-indica la tabla de la verdad. El símbolo || significa concatenación.
-*/
 module SOH(
     input  [31:0] R,
   	input  [21:0] Imm,

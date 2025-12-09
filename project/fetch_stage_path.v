@@ -144,7 +144,6 @@ module fetch_stage_path #(
     // ======================
     //  Instruction Memory
     // ======================
-    // OJO: usa el nombre real de tu módulo de memoria de instrucciones
     instruction_memory u_imem (
         .A(PC_reg),     // dirección = PC de 9 bits
         .I(instr_F)     // instrucción de 32 bits hacia IF/ID

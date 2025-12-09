@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module sparc_top (
     input wire clk,
     input wire reset,
@@ -119,7 +121,16 @@ module sparc_top (
         .instr_out(instr_ID),
         .pc_out(B_PC_ID)
     );
- 
+    /*
+    always @(posedge clk) begin
+        if (!reset) begin
+            $display("IF/ID @t=%0t | instr_F=%h instr_ID=%h",
+                     $time,
+                    instr_F,
+                    instr_ID);       
+        end
+    end
+*/
     // ======================================================
     // ETAPA DECODING
     // ======================================================
@@ -137,9 +148,9 @@ module sparc_top (
         // Forwarding inputs
         .ALU_Out_EX(Mux_to_mem),
         .data_mem_mux(data_mux_out),
-        .PW_WB(PW_WB), 
-        .RW_WB(RW_WB), 
-        .RF_LE_WB(RF_LE_WB), 
+        .PW_WB(PW_WB), //------------------------------->cambiar a PW_WB
+        .RW_WB(RW_WB), //------------------------------->cambiar a RW_WB
+        .RF_LE_WB(RF_LE_WB ), //------------------------------------------------>cambiar a RF_LE_WB 
 
         // DHDU hazard control
         .NOP(NOP),
@@ -169,8 +180,6 @@ module sparc_top (
    
     );
  
-    
-
     wire[31:0] instr_EX3;
     wire[31:0] D_EX2;
     wire[31:0] A_EX2;
@@ -195,7 +204,19 @@ module sparc_top (
         .ex_ctrl_out(ex_ctrl_out),
         .B_PC_EX(B_PC_EX)
     );
+/*
+    always @(posedge clk) begin
+        if (!reset) begin
+            $display("ID/EX @t=%0t | id_ctrl_out=%h ex_ctrl_out=%h",
+                     $time,
+                    id_ctrl_out,
+                    ex_ctrl_out);       
+        end
+    end
+    */
 
+  // Entradas
+  
       // ======================================================
     // ETAPA DE EJECUCIÓN (EX) INLINE
     // ======================================================
@@ -288,7 +309,17 @@ module sparc_top (
         .mem_rd_out(rd_in),
         .mem_third_op_out(DI)
     );
-
+/*
+  always @(posedge clk) begin
+    if (!reset) begin
+        $display("");  // blank line for readability
+        $display("EX/MEM @ t=%0t", $time);
+        $display("  mux to mem   = %0d", Mux_to_mem);
+        $display("  mem_alu_out  = %0d", alu_result_in);
+        $display("");  // blank line for readability
+    end
+end
+*/
 
     // ======================================================
     // ETAPA DE MEMORIA
@@ -303,7 +334,7 @@ module sparc_top (
         .mem_ctrl_out(mem_ctrl_out),
         .rd_out(rd_mem)
     );
-   
+
     // ======================================================
     // REGISTRO MEM/WB
     // ======================================================
@@ -320,7 +351,16 @@ module sparc_top (
         .wb_ctrl_out(wb_ctrl_out)
     );
    
-  
+  /*
+    always @(posedge clk) begin
+        if (!reset) begin
+            $display("ID/EX @t=%0t |  PW_WB=%h RW_WB=%0d",
+                     $time,
+                    PW_WB,
+                    RW_WB);       
+        end
+    end
+*/
 
     // ======================================================
     // DHDU: Data Hazard Detection Unit

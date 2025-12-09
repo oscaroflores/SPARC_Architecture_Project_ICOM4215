@@ -39,7 +39,7 @@ module control_unit(
         JMPL = 1'b0;
         B = 1'b0;
         CC = 1'b0;
-        ID_SR = 3'b0;   
+        ID_SR = 3'b0;    //no lo estamos cambiando en ningun lado
 
         if (is_nop) begin
             ALU_OP = 4'b0000;
@@ -70,11 +70,11 @@ module control_unit(
                         end
                         
                         3'b010: begin
-                        // ---------- Bicc: all conditional branches ----------
+                        // ---------- Bicc: all integer conditional branches ----------
                         // BA, BN, BE, BNE, BG, BLE, BGE, BL, BGU, BLEU, BCC, BCS, BPOS, BNEG, BVC, BVS
-                        B         = 1'b1;     
-                        RF_LE     = 1'b0;     
-                        CC        = 1'b0;     
+                        B         = 1'b1;     // "this is a branch"
+                        RF_LE     = 1'b0;     // branch doesn't write RF
+                        CC        = 1'b0;     // branch does not update PSR.icc
                         CALL      = 1'b0;
                         JMPL      = 1'b0;
                         L         = 1'b0;
@@ -121,7 +121,7 @@ module control_unit(
                         6'b000100: begin ALU_OP = 4'b0010; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUB
                         6'b010100: begin ALU_OP = 4'b0010; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBCC
                         6'b001100: begin ALU_OP = 4'b0011; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBX
-                        6'b011100: begin ALU_OP = 4'b0011; RF_LE=1; CC=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBXCC
+                        //6'b011100: begin ALU_OP = 4'b0011; RF_LE=1; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // SUBXCC
 
                         // ---------- Lógicas ----------
                         6'b000001: begin ALU_OP = 4'b0100; RF_LE=1; CC=0; SOH_OP = (i_bit ? 4'b1001 : 4'b1000); end // AND
@@ -171,7 +171,7 @@ module control_unit(
                     case (op3)
                         // ========= LOADS =========
                         6'b000000: begin
-                            // LD load word (unsigned, pero es un word completo)
+                            // LD  → load word (unsigned, pero es un word completo)
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;    // read
                             RAM_Size   = 2'b10;   // word
@@ -185,7 +185,7 @@ module control_unit(
                         end
 
                         6'b000001: begin
-                            // LDUB load unsigned byte
+                            // LDUB → load unsigned byte
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b00;   // byte
@@ -199,7 +199,7 @@ module control_unit(
                         end
 
                         6'b001001: begin
-                            // LDSB load signed byte
+                            // LDSB → load signed byte
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b00;   // byte
@@ -213,7 +213,7 @@ module control_unit(
                         end
 
                         6'b000010: begin
-                            // LDUH load unsigned halfword
+                            // LDUH → load unsigned halfword
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b01;   // halfword
@@ -227,7 +227,7 @@ module control_unit(
                         end
 
                         6'b001010: begin
-                            // LDSH load signed halfword
+                            // LDSH → load signed halfword
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b0;
                             RAM_Size   = 2'b01;   // halfword
@@ -242,7 +242,7 @@ module control_unit(
 ///////////////////////////////////////////////////////////////////////////////////
                         // ========= STORES =========
                         6'b000100: begin
-                            // ST store word
+                            // ST → store word
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;    // write
                             RAM_Size   = 2'b10;   // word
@@ -254,7 +254,7 @@ module control_unit(
                         end
 
                         6'b000101: begin
-                            // STB store byte
+                            // STB → store byte
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;
                             RAM_Size   = 2'b00;   // byte
@@ -265,7 +265,7 @@ module control_unit(
                         end
 
                         6'b000110: begin
-                            // STH store halfword
+                            // STH → store halfword
                             RAM_Enable = 1'b1;
                             RAM_RW     = 1'b1;
                             RAM_Size   = 2'b01;   // halfword
@@ -276,7 +276,7 @@ module control_unit(
                         end
 
                         default: begin
-                            // Otros 
+                            // Otros (LDD, STD, alternates, etc.) → por ahora NOP o error
                             RAM_Enable = 1'b0;
                             RAM_RW     = 1'b0;
                             L          = 1'b0;

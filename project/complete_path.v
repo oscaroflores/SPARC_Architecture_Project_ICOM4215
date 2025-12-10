@@ -22,7 +22,7 @@ module sparc_top (
 
     output [31:0] ex_ctrl_out,
     output [31:0] D_MEM_tmp,
-    output [31:0] ALU_out_EX,
+    output [31:0] Mux_to_mem,
     output [4:0]  RD_EX_out,
     output [3:0]  CC_EX,
 
@@ -55,12 +55,13 @@ module sparc_top (
     // A_EX, B_EX, D_EX, instr_EX, id_ctrl_out, TA ya son puertos
     wire        J;
     wire        carry_flag;
+    wire        reset_signal; //VERIFICAR
     // 'call' no se usa en este top, así que lo omito
 
     // ======================================================
     //  ID/EX → EXECUTE
     // ======================================================
-    // ex_ctrl_out, D_MEM_tmp, ALU_out_EX, RD_EX_out, CC_EX ya son puertos
+    // ex_ctrl_out, D_MEM_tmp, Mux_to_mem, RD_EX_out, CC_EX ya son puertos
 
     // ======================================================
     //  EXECUTE → EX/MEM → MEMORY
@@ -94,15 +95,14 @@ module sparc_top (
         .reset(reset),
         .pc_LE(LE_DHDU),
         .npc_LE(LE_DHDU),
-        .call(ex_ctrl_out[2]),
-        .jmpl(ex_ctrl_out[1]),
+        .call(id_ctrl_out[2]),
+        .jmpl(id_ctrl_out[1]), //VERIFICAR
         .LE_DHDU(LE_DHDU),
         .J(J),
         .TA(TA),
-        .ALU_out(ALU_out_EX[8:0]),
+        .ALU_out(alu_result_in[8:0]), // VERIFICAR
 
         .instr_F(instr_F),
-        .B_PC(B_PC_F),
 
         .PC_out(PC_fetch),
         .nPC_out(nPC_fetch)
@@ -114,9 +114,9 @@ module sparc_top (
     // ======================================================
     IF_ID_reg IF_ID0 (
         .clk(clk),
-        .reset(reset),
+        .reset(reset_signal),
         .instr_in(instr_F),
-        .pc_in(B_PC_F),
+        .pc_in(PC_fetch),
         .LE(LE_DHDU),
         .instr_out(instr_ID),
         .pc_out(B_PC_ID)
@@ -135,11 +135,7 @@ module sparc_top (
     // ETAPA DECODING
     // ======================================================
     wire [3:1] alu_ICC;
-    decoding_stage_path #(
-        .ADDR_WIDTH(9),
-        .RESET_PC(9'd0),
-        .RESET_nPC(9'd4)
-    ) ID (
+    decoding_stage_path ID (
         .clk(clk),
         .reset(reset),
         .B_PC_ID(B_PC_ID),
@@ -150,7 +146,7 @@ module sparc_top (
         .data_mem_mux(data_mux_out),
         .PW_WB(PW_WB), //------------------------------->cambiar a PW_WB
         .RW_WB(RW_WB), //------------------------------->cambiar a RW_WB
-        .RF_LE_WB(RF_LE_WB ), //------------------------------------------------>cambiar a RF_LE_WB 
+        .RF_LE_WB(RF_LE_WB), //------------------------------------------------>cambiar a RF_LE_WB 
 
         // DHDU hazard control
         .NOP(NOP),
@@ -176,8 +172,6 @@ module sparc_top (
         .J(J),
         .carry_out(carry_flag),
         .id_ctrl_out(id_ctrl_out)
-
-   
     );
  
     wire[31:0] instr_EX3;

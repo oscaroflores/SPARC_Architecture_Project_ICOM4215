@@ -3,13 +3,7 @@
 // =====================
 //  FETCH PATH (IF stage)
 // =====================
-module fetch_stage_path #(
-    parameter ADDR_WIDTH = 9,
-    parameter INST_WIDTH = 32,
-    // Puedes ajustar estos valores de reset si el profesor quiere algo distinto
-    parameter [ADDR_WIDTH-1:0] RESET_PC  = {ADDR_WIDTH{1'b0}},
-    parameter [ADDR_WIDTH-1:0] RESET_nPC = 9'd4      // PC=0, nPC=4 (byte addresses)
-)(
+module fetch_stage_path (
     input  wire clk,
     input  wire reset,
     input  wire LE_DHDU, // VERIFICAR: señal de enable desde DHDU
@@ -24,41 +18,41 @@ module fetch_stage_path #(
     input  wire jmpl,   // control de instrucción JMPL
     // Entradas desde otras etapas
     // TA y ALU_out vendrán luego del TA generator y del EX stage
-    input  wire [ADDR_WIDTH-1:0] TA,       // Target Address (branch/call)
-    input  wire [ADDR_WIDTH-1:0] ALU_out,  // Resultado de ALU para JMPL
+    input  wire [8:0] TA,       // Target Address (branch/call)
+    input  wire [8:0] ALU_out,  // Resultado de ALU para JMPL
 
     // Salidas hacia el pipeline IF/ID
-    output wire [INST_WIDTH-1:0] instr_F,  // instrucción leída (a IF/ID)
-    output wire [ADDR_WIDTH-1:0] B_PC,     // PC para el TA generator en ID (B_PC)
+    output wire [31:0] instr_F,  // instrucción leída (a IF/ID)
 
     // (Opcional) para debug/monitoreo
-    output wire [ADDR_WIDTH-1:0] PC_out,
-    output wire [ADDR_WIDTH-1:0] nPC_out
+    output wire [8:0] PC_out,
+    output wire [8:0] nPC_out
 );
 
     // ======================
     //  Registros PC y nPC
     // ======================
-    reg [ADDR_WIDTH-1:0] PC_reg;
-    reg [ADDR_WIDTH-1:0] nPC_reg;
+    reg [8:0] PC_reg;
+    reg [8:0] nPC_reg;
 
+    localparam ADDR_WIDTH = 9;
     // ======================
     //  Wires internos
     // ======================
 
     // Resultados de los ALU +4
-    wire [ADDR_WIDTH-1:0] TA_plus4;
-    wire [ADDR_WIDTH-1:0] nPC_plus4;
-    wire [ADDR_WIDTH-1:0] ALUout_plus4;
+    wire [8:0] TA_plus4;
+    wire [8:0] nPC_plus4;
+    wire [8:0] ALUout_plus4;
 
     // Salida del OR (jumpl OR J)
     wire branch_or_call;
 
     // Salidas de los muxes
-    wire [ADDR_WIDTH-1:0] mux_TA_nPC_plus4_out; // escoge entre nPC+4 y TA+4
-    wire [ADDR_WIDTH-1:0] mux_TA_nPC_out;       // escoge entre nPC y TA
-    wire [ADDR_WIDTH-1:0] mux_nPC_next_src;     // entrada final de nPC
-    wire [ADDR_WIDTH-1:0] mux_PC_next_src;      // entrada final de PC
+    wire [8:0] mux_TA_nPC_plus4_out; // escoge entre nPC+4 y TA+4
+    wire [8:0] mux_TA_nPC_out;       // escoge entre nPC y TA
+    wire [8:0] mux_nPC_next_src;     // entrada final de nPC
+    wire [8:0] mux_PC_next_src;      // entrada final de PC
 
     // ======================
     //  Lógica combinacional
@@ -89,7 +83,7 @@ module fetch_stage_path #(
         .R(ALUout_plus4)
     );
 
-    // Primer par de muxes (controlados por OR(jmpl, J))
+    // Primer par de muxes (controlados por OR(CALL, J))
     // Mux 1: escoge entre nPC+4 (secuencial) y TA+4 (brinco)
     TwoToOneMux #(.WIDTH(ADDR_WIDTH)) u_mux_TA_nPC_plus4 (
         .in0(nPC_plus4),       // camino normal: nPC + 4
@@ -131,8 +125,8 @@ module fetch_stage_path #(
     // ======================
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            PC_reg  <= RESET_PC;
-            nPC_reg <= RESET_nPC;
+            PC_reg  <= 9'd0;
+            nPC_reg <= 9'd4;
         end else begin
             if (pc_LE)
                 PC_reg <= mux_PC_next_src;

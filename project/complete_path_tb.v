@@ -109,15 +109,24 @@ module sparc_tb();
 
 `elsif sparc2
     initial begin
+        // $monitor(
+        //     { "==== sparc2 ====\n",
+        //       "PC=%0d NPC=%0d | Address=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+        //       "r1=%0d r2=%0d r3=%0d r4=%0d r5=%0d r8=%0d r10=%0d r11=%0d r12=%0d r15=%0d\n"
+        //     },
+        //     DUT.PC_fetch, DUT.nPC_fetch,
+        //     DUT.alu_result_in, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+        //     r1, r2, r3, r4, r5, r8, r10, r11, r12, r15
+        // );
+
         $monitor(
-            { "==== sparc2 ====\n",
-              "PC=%0d NPC=%0d | Address=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
-              "r1=%0d r2=%0d r3=%0d r4=%0d r5=%0d r8=%0d r10=%0d r11=%0d r12=%0d r15=%0d\n"
-            },
-            DUT.PC_fetch, DUT.nPC_fetch,
-            DUT.alu_result_in, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
-            r1, r2, r3, r4, r5, r8, r10, r11, r12, r15
+            "==== sparc2 ====\n\
+            PC=%0d JMPL_FETCH=%0d JMPL_RESET=%0d RESET_OUT=%0d\n\
+            FETCH_ALU=%0d ALU_OUT=%0d ALU_MEM=%0d MUX_TA=%0d MUX_PC_NEXT_SRC=%0d\n",
+            DUT.PC_fetch, DUT.FETCH.jmpl, DUT.ID.RESET_HANDLER.jumpl, DUT.ID.RESET_HANDLER.reset_out,
+            DUT.FETCH.ALU_out, DUT.MEM.alu_result_in, DUT.Mux_to_mem, DUT.FETCH.mux_TA_nPC_out, DUT.FETCH.mux_PC_next_src
         );
+
     end
 
     initial begin

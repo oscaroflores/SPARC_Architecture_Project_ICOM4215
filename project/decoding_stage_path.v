@@ -1,10 +1,6 @@
 `timescale 1ns / 1ps
 
-module decoding_stage_path #(
-    parameter ADDR_WIDTH = 9,
-    parameter RESET_PC   = 9'd0,
-    parameter RESET_nPC  = 9'd4
-)(
+module decoding_stage_path(
     input  wire                     clk,
     input  wire                     reset,
     input  wire [8:0]               B_PC_ID,         // desde IF/ID
@@ -32,10 +28,11 @@ module decoding_stage_path #(
     output wire [31:0]              B_src,
     output wire [31:0]              D_src,
     output wire [31:0]              instr_EX,
-    output wire [ADDR_WIDTH-1:0]    TA,
+    output wire [8:0]    TA,
     output wire                     J,            // Va para la etapa de fetch
     output wire                     carry_out,    // Va para el alu en EX stage
-    output wire [31:0]              id_ctrl_out
+    output wire [31:0]              id_ctrl_out,
+    output wire                     reset_signal
 );
     
 
@@ -44,7 +41,6 @@ module decoding_stage_path #(
     // ------------------------------------------------------------
     // TAG related
     wire [29:0] disp22_ext = { {8{instr_ID[21]}}, instr_ID[21:0] }; // sign-extend 22 -> 30
-    wire [29:0] TAG_Offset;
 
     // Register file ports / decoded register addresses
     wire [4:0] RA_rf;
@@ -71,21 +67,14 @@ module decoding_stage_path #(
     // ------------------------------------------------------------
     // TAG unit (genera TA)
     // ------------------------------------------------------------
-    TAG #(
-        .PC_WIDTH(ADDR_WIDTH),
-        .OFFSET_WIDTH(30)
-    ) TAG0 (
-        .B_PC   (B_PC_ID[ADDR_WIDTH-1:0]), // maybe cambiar
-        .Offset (TAG_Offset),
+
+    TAG TAG0 (
+        .B_PC   (B_PC_ID[8:0]), // maybe cambiar
+        .Offset ({instr_ID[29:0]}),
+        .CALL   (ex_ctrl_in[2]),          // asunción: bit 24 = CALL (ajustar si hace falta)
         .TA     (TA)
     );
 
-    TAG_OffsetMux #(.WIDTH(30)) TAG_Offset_Mux (
-        .CALL   (id_ctrl_out[2]),
-        .offset22 (disp22_ext),
-        .offset30 ({instr_ID[29:0]}),
-        .OffsetOut (TAG_Offset)
-    );
     // ------------------------------------------------------------
     // Register File (3-port)
     // ------------------------------------------------------------
@@ -164,8 +153,6 @@ module decoding_stage_path #(
     wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
     wire [3:0] cond = instr_ID[28:25];
     wire [31:0] control_signals;
-    wire reset_signal;
-
     CH u_CH (
         .BI(BI),
         .cond(cond),

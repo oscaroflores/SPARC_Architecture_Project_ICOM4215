@@ -57,18 +57,18 @@ module sparc_tb();
     initial begin
         $monitor(
             { "==== debugging ==== \n",
-            "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+            "PC=%0d NPC=%0d | Address=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
             "r5=%0d r6=%0d r16=%0d r17=%0d r18=%0d\n"
             },
             DUT.PC_fetch, DUT.nPC_fetch,
-            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            DUT.alu_result_in, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
             r5, r6, r16, r17, r18
         );
     end
 
     initial begin
         #76;
-        $display("DM[56 to 59] = %b %b %b %b",
+        $display("DM[56-59] = %b %b %b %b",
             DUT.MEM.data_memory_inst.Memory[56],
             DUT.MEM.data_memory_inst.Memory[57],
             DUT.MEM.data_memory_inst.Memory[58],
@@ -84,11 +84,11 @@ module sparc_tb();
     initial begin
         $monitor(
             { "==== testcode_sparc1 ====\n",
-              "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "PC=%0d NPC=%0d | Adress=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
               "r1=%0d r2=%0d r3=%0d r5=%0d\n"
             },
             DUT.PC_fetch, DUT.nPC_fetch,
-            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            DUT.alu_result_in, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
             r1, r2, r3, r5
         );
     end
@@ -111,18 +111,12 @@ module sparc_tb();
     initial begin
         $monitor(
             { "==== sparc2 ====\n",
-              "PC=%0d NPC=%0d | PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
-              "r1=%0d r2=%0d r3=%0d\n",
-              "r4=%0d r5=%0d r8=%0d\n",
-              "r10=%0d r11=%0d\n",
-              "r12=%0d r15=%0d\n"
+              "PC=%0d NPC=%0d | Address=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "r1=%0d r2=%0d r3=%0d r4=%0d r5=%0d r8=%0d r10=%0d r11=%0d r12=%0d r15=%0d\n"
             },
             DUT.PC_fetch, DUT.nPC_fetch,
-            DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
-            r1, r2, r3,
-            r4, r5, r8,
-            r10, r11,
-            r12, r15
+            DUT.alu_result_in, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r1, r2, r3, r4, r5, r8, r10, r11, r12, r15
         );
     end
 
@@ -147,7 +141,7 @@ module sparc_tb();
     end
 `else
     initial begin
-        $display("ERROR: use command \"iverilog -Ddebugging\" Define debugging, testcode_sparc1 or sparc2");
+        $display("ERROR: use command \"iverilog -Ddebugging\" Define debugging, sparc1 or sparc2");
         $finish;
     end
 `endif

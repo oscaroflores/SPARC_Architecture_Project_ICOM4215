@@ -32,7 +32,8 @@ module decoding_stage_path(
     output wire                     J,            // Va para la etapa de fetch
     output wire                     carry_out,    // Va para el alu en EX stage
     output wire [31:0]              id_ctrl_out,
-    output wire                     reset_signal
+    output wire                     reset_signal,
+    output wire [2:0]               ID_SR
 );
     
 
@@ -185,5 +186,6 @@ module decoding_stage_path(
     // Passthrough de B_PC e instrucción a EX
     // ------------------------------------------------------------
     assign instr_EX = instr_ID;
+    assign ID_SR = control_signals[20:18];
 
 endmodule

@@ -17,10 +17,11 @@ module TwoToOneMux #(
 );
 
     always @* begin
-        if (sel)
+        if (sel) begin
             out = in1;
-        else
+        end else begin
             out = in0;
+        end
     end
 
 endmodule

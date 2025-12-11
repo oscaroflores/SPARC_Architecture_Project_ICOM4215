@@ -9,7 +9,7 @@ module NPC_reg (
     input [8:0] I,
     output reg [8:0] O
 );
-    always @(posedge clk) begin
+    always @(posedge clk or posedge reset) begin
         if (reset)
             O <= 9'd4;
         else if (LE)

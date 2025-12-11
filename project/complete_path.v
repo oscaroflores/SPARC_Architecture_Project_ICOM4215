@@ -56,6 +56,7 @@ module sparc_top (
     wire        J;
     wire        carry_flag;
     wire        reset_signal; //VERIFICAR
+    wire [2:0]  ID_SR;
     // 'call' no se usa en este top, así que lo omito
 
     // ======================================================
@@ -93,10 +94,8 @@ module sparc_top (
     fetch_stage_path FETCH (
         .clk(clk),
         .reset(reset),
-        .pc_LE(LE_DHDU),
-        .npc_LE(LE_DHDU),
         .call(id_ctrl_out[2]),
-        .jmpl(id_ctrl_out[1]), //VERIFICAR
+        .jmpl(ex_ctrl_out[1]), //VERIFICAR
         .LE_DHDU(LE_DHDU),
         .J(J),
         .TA(TA),
@@ -171,7 +170,8 @@ module sparc_top (
         .TA(TA),
         .J(J),
         .carry_out(carry_flag),
-        .id_ctrl_out(id_ctrl_out)
+        .id_ctrl_out(id_ctrl_out),
+        .ID_SR(ID_SR)
     );
  
     wire[31:0] instr_EX3;
@@ -198,16 +198,6 @@ module sparc_top (
         .ex_ctrl_out(ex_ctrl_out),
         .B_PC_EX(B_PC_EX)
     );
-/*
-    always @(posedge clk) begin
-        if (!reset) begin
-            $display("ID/EX @t=%0t | id_ctrl_out=%h ex_ctrl_out=%h",
-                     $time,
-                    id_ctrl_out,
-                    ex_ctrl_out);       
-        end
-    end
-    */
 
   // Entradas
   
@@ -270,7 +260,6 @@ module sparc_top (
         .sel (CALLbit),
         .out (RD_EX_out)
     );
-    wire [31:0] Mux_to_mem;
     // MUX ALU/PC
     TwoToOneMux #(.WIDTH(32)) ALU_mux (
         .in0 (ALU_Out_EX2),
@@ -361,7 +350,7 @@ end
     // ======================================================
     DHDU DHDU (
         .EX_L(ex_ctrl_out[4]),
-        .SR(id_ctrl_out[20:18]),
+        .SR(ID_SR),
         .RA(instr_ID[18:14]),
         .RB(instr_ID[4:0]),
         .RD(instr_ID[29:25]),

@@ -39,19 +39,4 @@ module EX_MEM_reg (
             mem_rd_out       <= ex_rd_in;
         end
     end
-always @(posedge clk) begin
-        if (reset) begin
-            // NOP en control y datos
-            mem_ctrl_out     <= 32'b0;
-            mem_third_op_out <= 32'b0;
-            mem_alu_out      <= 32'b0;
-            mem_rd_out       <= 5'b0;
-        end
-        else begin
-            mem_ctrl_out     <= ex_ctrl_in;
-            mem_third_op_out <= ex_third_op_in;
-            mem_alu_out      <= ex_alu_out_in;
-            mem_rd_out       <= ex_rd_in;
-        end
-    end
 endmodule

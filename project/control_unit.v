@@ -85,8 +85,7 @@ module control_unit(
 
                         ALU_OP    = 4'b1101;  // "PC + disp" path (however you defined it)
                         SOH_OP    = 4'b0001;  // for example: select disp22 as branch offset
-               
-    end
+                        end
                     endcase
                 end
                 
@@ -147,8 +146,15 @@ module control_unit(
                             JMPL = 1; 
                             RF_LE = 1;
                             CC = 0;
-                            SOH_OP = (i_bit ? 4'b1001 : 4'b1000);
+
+                            if (i_bit) begin
+                                SOH_OP = 4'b1001;
+                                ID_SR = 3'b001;  // rs1, simm13
+                            end else begin
+                                SOH_OP = 4'b1000;
+                                ID_SR = 3'b011;  // rs1, rs2
                             end
+                        end
                         default: begin
                             ALU_OP = 4'b1111;
                         end

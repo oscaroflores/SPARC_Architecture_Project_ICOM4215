@@ -8,10 +8,6 @@ module fetch_stage_path (
     input  wire reset,
     input  wire LE_DHDU, // VERIFICAR: señal de enable desde DHDU
 
-    // Enables para poder hacer stalls más adelante
-    input  wire pc_LE,
-    input  wire npc_LE,
-
     // Señales de control
     input  wire call,   // control de instrucción JMPL
     input  wire J,      // condición de branch tomada (condition handler)
@@ -45,7 +41,7 @@ module fetch_stage_path (
     wire [8:0] nPC_plus4;
     wire [8:0] ALUout_plus4;
 
-    // Salida del OR (jumpl OR J)
+    // Salida del OR (call OR J)
     wire branch_or_call;
 
     // Salidas de los muxes
@@ -128,9 +124,9 @@ module fetch_stage_path (
             PC_reg  <= 9'd0;
             nPC_reg <= 9'd4;
         end else begin
-            if (pc_LE)
+            if (LE_DHDU)
                 PC_reg <= mux_PC_next_src;
-            if (npc_LE)
+            if (LE_DHDU)
                 nPC_reg <= mux_nPC_next_src;
         end
     end

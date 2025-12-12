@@ -1,19 +1,20 @@
 `timescale 1ns / 1ps
 
 module reset_handler(
-    input jumpl,
-    input call,
-    input J,
-    input I_29,
+    input jmpl_EX,
+    input call_ID,
+    input BI_ID,
+    input J_ID,
+    input I_29_ID,
     input global_reset,
     output reg reset_out
 );
 
     always @(*) begin
-        if(~J && I_29) begin // Detalle arquitectural 3
+        if(~J_ID & BI_ID & I_29_ID) begin
             reset_out = 1'b1;
         end else
-        if (jumpl || call || J || global_reset) begin
+        if (global_reset) begin
             reset_out = 1'b1;
         end else begin
             reset_out = 1'b0;

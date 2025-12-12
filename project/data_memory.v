@@ -76,7 +76,5 @@ module data_memory(
         //$readmemb("codes/debugging_code_SPARC.txt", Memory);
         //$readmemb("codes/testcode_sparc1.txt", Memory);
         $readmemb("codes/testcode_sparc2.txt", Memory);
-
     end
-
 endmodule

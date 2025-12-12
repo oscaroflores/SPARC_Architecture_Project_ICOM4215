@@ -10,6 +10,10 @@ module CH(
     reg N, Z, V, C;
 
 always @(*) begin
+    N = ACC[3];
+    Z = ACC[2];
+    V = ACC[1];
+    C = ACC[0];
 
     if (BI == 1) begin
         N = ACC[3];

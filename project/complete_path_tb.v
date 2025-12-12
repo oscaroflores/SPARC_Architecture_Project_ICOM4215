@@ -109,35 +109,31 @@ module sparc_tb();
 
 `elsif sparc2
     initial begin
-        // $monitor(
-        //     { "==== sparc2 ====\n",
-        //       "PC=%0d NPC=%0d | ALU_OUT=%0d Address=%0d DO=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
-        //       "r0=%0d r1=%0d r2=%0d r3=%0d r4=%0d r5=%0d r8=%0d r10=%0d r11=%0d r12=%0d r15=%0d SRA=%b SRB=%b SRC=%b\n"
-        //     },
-        //     DUT.PC_fetch, DUT.nPC_fetch,
-        //     DUT.Mux_to_mem, DUT.alu_result_in, DUT.MEM.data_memory_inst.DO, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
-        //     r0, r1, r2, r3, r4, r5, r8, r10, r11, r12, r15, DUT.DHDU.SRA, DUT.DHDU.SRB, DUT.DHDU.SRC
-        // );
-
         $monitor(
-            {
-            "==== sparc2 ====\n",
-            " PC_fetch=%0d  FETCH.jmpl=%b  id_ctrl_out=%b\n",
-            " SR(bits) SRA SRB SRC = %b %b %b   DHDU: LE=%b NOP=%b A_S=%b B_S=%b D_S=%b\n",
-            " intr_IF=%b instr_ID=%b instr_EX=%b  EX_RD=%0d MEM_RD=%0d WB_RD=%0d\n",
-            " EX_RF_LE=%b MEM_RF_LE=%b WB_RF_LE=%b\n",
-            " ALU_A=%0d ALU_B=%0d ALU_OP=%0d ALU_Out(EX)=%0d  B_PC_EX=%0d  Mux_to_mem=%0d\n",
-            " MEM_ADDR(alu_result_in)=%0d MEM_DO(data_out)=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n\n"
+            { "==== sparc2 ====\n",
+              "PC=%0d NPC=%0d IF_PC=%0d IF_instr=%0d ALU_OUT=%0d Address=%0d DO=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n",
+              "r1=%0d r2=%0d r3=%0d r4=%0d r5=%0d r8=%0d r10=%0d r11=%0d r12=%0d r15=%0d\n"
             },
-            DUT.PC_fetch, DUT.FETCH.jmpl, DUT.id_ctrl_out,
-            DUT.DHDU.SRA, DUT.DHDU.SRB, DUT.DHDU.SRC,
-            DUT.DHDU.LE, DUT.DHDU.NOP, DUT.DHDU.A_S, DUT.DHDU.B_S, DUT.DHDU.D_S,
-            DUT.instr_F, DUT.instr_ID, DUT.instr_EX3,
-            DUT.DHDU.EX_RD, DUT.rd_mem, DUT.RW_WB,
-            DUT.EX_MEM0.ex_ctrl_in[3], DUT.mem_ctrl_out[3], DUT.wb_ctrl_out[3],
-            DUT.alu0.A, DUT.alu0.B, DUT.ALU_OP, DUT.ALU_Out_EX2, DUT.B_PC_EX, DUT.Mux_to_mem,
-            DUT.alu_result_in, DUT.MEM.data_memory_inst.DO, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB
+            DUT.PC_fetch, DUT.nPC_fetch, DUT.IF_ID0.pc_out, DUT.IF_ID0.instr_out,
+            DUT.Mux_to_mem, DUT.alu_result_in, DUT.MEM.data_memory_inst.DO, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB,
+            r1, r2, r3, r4, r5, r8, r10, r11, r12, r15
         );
+
+        // $monitor(
+        //     {
+        //     "==== sparc2 ====\n",
+        //     " PC_fetch=%0d  FETCH.jmpl=%b  id_ctrl_out=%b\n",
+        //     " intr_IF=%b instr_ID=%b instr_EX=%b\n",
+        //     " ALU_A=%0d ALU_B=%0d ALU_OP=%0d ALU_Out(EX)=%0d  B_PC_EX=%0d  Mux_to_mem=%0d\n",
+        //     " PC_JMPL_IN=%0d  PC_JMPL_OUT=%0d",
+        //     " MEM_ADDR(alu_result_in)=%0d MEM_DO(data_out)=%0d PW_WB=%0d RW_WB=%0d RF_LE_WB=%0b\n\n"
+        //     },
+        //     DUT.PC_fetch, DUT.FETCH.jmpl, DUT.id_ctrl_out,
+        //     DUT.instr_F, DUT.instr_ID, DUT.instr_EX3,
+        //     DUT.alu0.A, DUT.alu0.B, DUT.ALU_OP, DUT.ALU_Out_EX2, DUT.B_PC_EX, DUT.Mux_to_mem,
+        //     DUT.FETCH.u_mux_PC_next.in1, DUT.FETCH.u_mux_PC_next.out,
+        //     DUT.alu_result_in, DUT.MEM.data_memory_inst.DO, DUT.PW_WB, DUT.RW_WB, DUT.RF_LE_WB
+        // );
 
     end
 

@@ -32,7 +32,7 @@ module decoding_stage_path(
     output wire                     J,            // Va para la etapa de fetch
     output wire                     carry_out,    // Va para el alu en EX stage
     output wire [31:0]              id_ctrl_out,
-    output wire                     reset_signal,
+    output wire                     reset_handler_signal,
     output wire [2:0]               ID_SR
 );
     
@@ -151,7 +151,7 @@ module decoding_stage_path(
     // CH expects: BI, cond, ACC[3:0] -> J
     // Mapear BI y cond desde instr_ID (ajusta según tu encoding)
     // ------------------------------------------------------------
-    wire BI   = id_ctrl_out[0];         // asunción: bit 30 = BI (ajusta si hace falta)
+    wire BI   = id_ctrl_out[0];
     wire [3:0] cond = instr_ID[28:25];
     wire [31:0] control_signals;
     CH u_CH (
@@ -174,12 +174,13 @@ module decoding_stage_path(
     );
 
     reset_handler RESET_HANDLER (
-        .jumpl(ex_ctrl_in[1]),
-        .call(id_ctrl_out[2]),
-        .J(J),
-        .I_29(instr_ID[29]),
+        .jmpl_EX(ex_ctrl_in[1]),
+        .call_ID(id_ctrl_out[2]),
+        .J_ID(J),
+        .BI_ID(BI),
+        .I_29_ID(instr_ID[29]),
         .global_reset(reset),
-        .reset_out(reset_signal)
+        .reset_out(reset_handler_signal)
     );
 
     // ------------------------------------------------------------
